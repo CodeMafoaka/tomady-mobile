@@ -9,7 +9,6 @@ import Animated, {
   Easing,
 } from "react-native-reanimated";
 import { AIOrb } from "./AIOrb";
-import { C } from "../constant/theme";
 
 interface AIAssistantButtonProps {
   onPress?: () => void;
@@ -19,10 +18,10 @@ interface AIAssistantButtonProps {
   style?: StyleProp<ViewStyle>;
 }
 
-const DEFAULT_SIZE = 56;
-// L'orbe est rendu plus grand que le bouton lui-même : le halo flouté
-// déborde volontairement autour du disque central, comme sur la référence.
-const ORB_SCALE = 2.5;
+const DEFAULT_SIZE = 42;
+// Halo plus contenu : juste un peu plus grand que le disque, pas un halo géant.
+const ORB_SCALE = 1.4;
+const BORDER_WIDTH = 0.1;
 
 export const AIAssistantButton: React.FC<AIAssistantButtonProps> = ({
   onPress,
@@ -52,7 +51,11 @@ export const AIAssistantButton: React.FC<AIAssistantButtonProps> = ({
   });
 
   const speed = isListening ? "listening" : isActive ? "active" : "idle";
-  const orbSize = size * ORB_SCALE;
+  // L'orbe lui-même est généré un peu plus grand que le cadre visible,
+  // puis coupé net par overflow:hidden + bordure ci-dessous, pour un
+  // rendu compact et bien défini plutôt qu'un halo qui déborde partout.
+  const containerSize = size * ORB_SCALE;
+  const orbSize = containerSize * 0.9;
 
   return (
     <View style={[styles.wrapper, style]}>
@@ -62,11 +65,32 @@ export const AIAssistantButton: React.FC<AIAssistantButtonProps> = ({
         onPressOut={handlePressOut}
         accessibilityLabel="Assistant IA"
         accessibilityRole="button"
-        style={[styles.pressableArea, { width: orbSize, height: orbSize }]}
+        style={[styles.pressableArea, { width: containerSize, height: containerSize }]}
       >
-        <Animated.View style={buttonScaleStyle}>
-          {/* Vrai orbe flouté : plusieurs masses de couleur mélangées, comme la référence */}
-          <AIOrb size={orbSize} speed={speed} />
+        <Animated.View
+          style={[
+            styles.frame,
+            buttonScaleStyle,
+            {
+              width: containerSize,
+              height: containerSize,
+              borderRadius: containerSize / 2,
+              borderWidth: BORDER_WIDTH
+            },
+          ]}
+        >
+          {/* Vrai orbe flouté, centré et rogné au cadre par overflow:hidden */}
+          <View
+            style={{
+              position: "absolute",
+              width: orbSize,
+              height: orbSize,
+              top: (containerSize - orbSize) / 2,
+              left: (containerSize - orbSize) / 2,
+            }}
+          >
+            <AIOrb size={orbSize} speed={speed} />
+          </View>
 
           {/* Cœur sombre au centre, pour garder un disque net cliquable */}
           <View
@@ -76,8 +100,6 @@ export const AIAssistantButton: React.FC<AIAssistantButtonProps> = ({
                 width: size * 0.5,
                 height: size * 0.5,
                 borderRadius: (size * 0.5) / 2,
-                top: (orbSize - size * 0.5) / 2,
-                left: (orbSize - size * 0.5) / 2,
               },
             ]}
           />
@@ -91,15 +113,21 @@ const styles = StyleSheet.create({
   wrapper: {
     alignItems: "center",
     justifyContent: "center",
-    gap: 2,
+    gap: 4,
   },
   pressableArea: {
     alignItems: "center",
     justifyContent: "center",
   },
+  frame: {
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden",
+    backgroundColor: "#ac0479ff",
+  },
   core: {
     position: "absolute",
-    backgroundColor: "rgba(9, 9, 11, 0.35)",
+    backgroundColor: "rgba(23, 23, 255, 0.33)",
     borderWidth: 1,
     borderColor: "rgba(255, 255, 255, 0.08)",
   },
