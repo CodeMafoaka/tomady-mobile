@@ -1,15 +1,17 @@
-import { useState } from "react";
-import { View, Text, Pressable, ScrollView } from "react-native";
+import { useState, useEffect } from "react";
+import { View, Text, TextInput, Pressable, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import Svg, { Polyline, Circle } from "react-native-svg";
-import { Sparkles, BarChart3 } from "lucide-react-native";
+import { Sparkles, BarChart3, Plus } from "lucide-react-native";
 import { C, FONTS } from "../constant/theme";
 import { TopBar } from "../components/TopBar";
 import { Blob } from "../components/Blob";
-import { USER, WEIGHT_DATA } from "../data/mockData";
+import { USER } from "../data/mockData";
+import { getWeightEntriesSince, addWeightEntry } from "../services/database";
 
 const RANGES = ["7j", "30j", "3m", "1a"];
+const RANGE_DAYS = { "7j": 7, "30j": 30, "3m": 90, "1a": 365 };
 const CAL_BARS = [0.7, 0.85, 1.0, 0.6, 0.95, 1.1, 0.62];
 const CAL_DAYS = ["L", "M", "M", "J", "V", "S", "D"];
 const TRENDS = [
@@ -19,8 +21,14 @@ const TRENDS = [
   "Le mofo sucré est souvent associé à un inconfort digestif.",
 ];
 
-// Petit graphique en ligne (remplace recharts, indisponible en React Native)
+function formatDateLabel(isoDate) {
+  const d = new Date(isoDate);
+  return `${d.getDate()}/${d.getMonth() + 1}`;
+}
+
+// Petit graphique en ligne
 function WeightChart({ data, width = 300, height = 130, min = 62, max = 76 }) {
+  if (data.length < 2) return null;
   const padding = 10;
   const stepX = (width - padding * 2) / (data.length - 1);
   const points = data.map((d, i) => {
@@ -50,13 +58,49 @@ function WeightChart({ data, width = 300, height = 130, min = 62, max = 76 }) {
 export function StatsScreen({ profile: propProfile }) {
   const p = propProfile || USER;
   const [range, setRange] = useState("30j");
+  const [weightData, setWeightData] = useState([]);
+  const [weightInput, setWeightInput] = useState("");
+  const [weightLoading, setWeightLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  const loadWeights = async (rangeKey) => {
+    setWeightLoading(true);
+    try {
+      const days = RANGE_DAYS[rangeKey] || 30;
+      const entries = await getWeightEntriesSince(days);
+      setWeightData(entries.map((e) => ({ d: formatDateLabel(e.date), kg: e.kg, id: e.id })));
+    } finally {
+      setWeightLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadWeights(range);
+  }, [range]);
+
+  const handleAddWeight = async () => {
+    const kg = parseFloat(weightInput);
+    if (isNaN(kg) || kg <= 0 || kg > 500) return;
+    setSaving(true);
+    try {
+      await addWeightEntry(kg);
+      setWeightInput("");
+      await loadWeights(range);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const chartData = weightData;
+  const minW = chartData.length > 0 ? Math.floor(Math.min(...chartData.map((w) => w.kg)) - 2) : 62;
+  const maxW = chartData.length > 0 ? Math.ceil(Math.max(...chartData.map((w) => w.kg)) + 2) : 76;
 
   return (
     <SafeAreaView className="flex-1" style={{ backgroundColor: C.canvas }}>
       <TopBar title="Statistiques" />
 
       <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 100, gap: 16 }}>
-        {/* weight evolution */}
+        {/* ════════ Évolution du poids ════════ */}
         <View className="rounded-[20px] border p-[18px]" style={{ backgroundColor: C.card, borderColor: C.line }}>
           <View className="flex-row items-center justify-between">
             <Text style={{ fontFamily: FONTS.display, color: C.ink }} className="text-[15px] font-semibold">
@@ -82,24 +126,56 @@ export function StatsScreen({ profile: propProfile }) {
             </View>
           </View>
 
+          {/* Résumé */}
           <View className="mb-1 mt-3 flex-row" style={{ gap: 16 }}>
             <View>
-              <Text className="text-[17px] font-extrabold" style={{ color: C.ink }}>{p.weight.current} kg</Text>
+              <Text className="text-[17px] font-extrabold" style={{ color: C.ink }}>{p.weight?.current ?? "—"} kg</Text>
               <Text className="text-[10px]" style={{ color: C.muted }}>Actuel</Text>
             </View>
             <View>
-              <Text className="text-[17px] font-extrabold" style={{ color: C.muted }}>{p.weight.start} kg</Text>
+              <Text className="text-[17px] font-extrabold" style={{ color: C.muted }}>{p.weight?.start ?? "—"} kg</Text>
               <Text className="text-[10px]" style={{ color: C.muted }}>Initial</Text>
             </View>
             <View>
-              <Text className="text-[17px] font-extrabold" style={{ color: C.greenDeep }}>{p.weight.target} kg</Text>
+              <Text className="text-[17px] font-extrabold" style={{ color: C.greenDeep }}>{p.weight?.target ?? "—"} kg</Text>
               <Text className="text-[10px]" style={{ color: C.muted }}>Objectif</Text>
             </View>
           </View>
 
+          {/* Input pour ajouter une pesée */}
+          <View className="my-[12px] flex-row items-center" style={{ gap: 8 }}>
+            <TextInput
+              value={weightInput}
+              onChangeText={setWeightInput}
+              placeholder="68.5"
+              keyboardType="decimal-pad"
+              placeholderTextColor={C.muted}
+              accessibilityLabel="Nouveau poids"
+              className="h-[44px] flex-1 rounded-xl border px-[14px] text-[14px]"
+              style={{ backgroundColor: C.white, borderColor: C.line, color: C.ink }}
+            />
+            <Text className="text-[12px] font-semibold" style={{ color: C.muted }}>kg</Text>
+            <Pressable
+              onPress={handleAddWeight}
+              disabled={saving || !weightInput.trim()}
+              accessibilityLabel="Ajouter cette pesée"
+              accessibilityRole="button"
+              className="h-[44px] w-[44px] items-center justify-center rounded-xl active:opacity-80"
+              style={{
+                backgroundColor: weightInput.trim() && !saving ? C.green : C.line,
+              }}
+            >
+              <Plus size={18} color={weightInput.trim() && !saving ? C.white : C.muted} />
+            </Pressable>
+          </View>
+
+          {/* Graphique */}
           <View className="mt-[6px] items-center">
-            {WEIGHT_DATA.length < 2 ? (
-              /* ---------- État vide ---------- */
+            {weightLoading ? (
+              <View className="items-center justify-center py-[30px]">
+                <Text className="text-[13px]" style={{ color: C.muted }}>Chargement...</Text>
+              </View>
+            ) : chartData.length < 2 ? (
               <View className="items-center justify-center py-[30px]" style={{ gap: 12 }}>
                 <View
                   className="h-[56px] w-[56px] items-center justify-center rounded-full"
@@ -115,7 +191,7 @@ export function StatsScreen({ profile: propProfile }) {
                 </Text>
               </View>
             ) : (
-              <WeightChart data={WEIGHT_DATA} />
+              <WeightChart data={chartData} min={minW} max={maxW} />
             )}
           </View>
         </View>

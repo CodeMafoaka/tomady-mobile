@@ -2,9 +2,9 @@
    TOMADY — Service de base de données locale SQLite
    =============================================================
    Relations :
-     users 1―* weight_entries (à venir)
-     users 1―* meal_entries   ✓
-     users 1―* chat_messages  ✓
+     users 1―* weight_entries  ✓
+     users 1―* meal_entries    ✓
+     users 1―* chat_messages   ✓
 
    Contrat :
      initDatabase()      → crée les tables si absentes
@@ -18,6 +18,9 @@
      getChatMessages()   → historique des conversations
      addChatMessage()    → ajoute un message
      clearChatMessages() → efface l'historique
+     getWeightEntries()  → historique du poids
+     addWeightEntry()    → ajoute une pesée
+     deleteWeightEntry() → supprime une pesée
    ============================================================ */
 
 import * as SQLite from "expo-sqlite";
@@ -104,6 +107,22 @@ export async function initDatabase() {
   await db.execAsync(`
     CREATE INDEX IF NOT EXISTS idx_chat_date
     ON chat_messages(created_at);
+  `);
+
+  await db.execAsync(`
+    CREATE TABLE IF NOT EXISTS weight_entries (
+      id         INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id    INTEGER DEFAULT 1,
+      kg         REAL    NOT NULL,
+      date       TEXT    NOT NULL DEFAULT (date('now')),
+      notes      TEXT,
+      created_at TEXT    DEFAULT (datetime('now'))
+    );
+  `);
+
+  await db.execAsync(`
+    CREATE INDEX IF NOT EXISTS idx_weight_date
+    ON weight_entries(user_id, date);
   `);
 }
 
@@ -361,6 +380,59 @@ export async function clearChatMessages() {
 }
 
 /* ───────────────────────────────────────────
+   POIDS (weight_entries)
+   ─────────────────────────────────────────── */
+
+/**
+ * Récupère toutes les entrées de poids, triées par date décroissante.
+ */
+export async function getWeightEntries() {
+  const db = await getDb();
+  const rows = await db.getAllAsync(
+    `SELECT * FROM weight_entries
+     WHERE user_id = 1
+     ORDER BY date DESC, id DESC`,
+  );
+  return rows.map(normalizeWeightRow);
+}
+
+/**
+ * Récupère les entrées de poids pour une plage de jours.
+ * @param {number} days — ex: 7, 30, 90, 365
+ */
+export async function getWeightEntriesSince(days) {
+  const db = await getDb();
+  const rows = await db.getAllAsync(
+    `SELECT * FROM weight_entries
+     WHERE user_id = 1
+       AND date >= date('now', ?)
+     ORDER BY date ASC, id ASC`,
+    [`-${days} days`],
+  );
+  return rows.map(normalizeWeightRow);
+}
+
+/**
+ * Ajoute une entrée de poids.
+ */
+export async function addWeightEntry(kg, dateStr) {
+  const db = await getDb();
+  const d = dateStr || new Date().toISOString().split("T")[0];
+  await db.runAsync(
+    `INSERT INTO weight_entries (user_id, kg, date) VALUES (?, ?, ?)`,
+    [1, kg, d],
+  );
+}
+
+/**
+ * Supprime une entrée de poids.
+ */
+export async function deleteWeightEntry(id) {
+  const db = await getDb();
+  await db.runAsync("DELETE FROM weight_entries WHERE id = ?", [id]);
+}
+
+/* ───────────────────────────────────────────
    Helpers
    ─────────────────────────────────────────── */
 
@@ -395,4 +467,13 @@ function normalizeChatRow(row) {
     };
   }
   return msg;
+}
+
+function normalizeWeightRow(row) {
+  return {
+    id: row.id,
+    kg: row.kg,
+    date: row.date,
+    notes: row.notes,
+  };
 }

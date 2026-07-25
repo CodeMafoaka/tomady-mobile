@@ -17,6 +17,7 @@ import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 
 import Animated, {
+  Easing,
   FadeIn,
   FadeOut,
   SlideInLeft,
@@ -63,6 +64,26 @@ export default function App() {
   const [meals, setMeals] = useState([]);
   const [profile, setProfile] = useState({});
   const [dbReady, setDbReady] = useState(false);
+
+  // Recalcule les totaux du jour dans profile à partir des repas
+  const applyDailyTotals = (todayMeals) => {
+    setProfile((prev) => ({
+      ...prev,
+      caloriesConsumed: todayMeals.reduce((sum, m) => sum + (m.kcal || 0), 0),
+      protein: {
+        ...prev.protein,
+        consumed: todayMeals.reduce((sum, m) => sum + (m.protein_g || 0), 0),
+      },
+      carbs: {
+        ...prev.carbs,
+        consumed: todayMeals.reduce((sum, m) => sum + (m.carbs_g || 0), 0),
+      },
+      fat: {
+        ...prev.fat,
+        consumed: todayMeals.reduce((sum, m) => sum + (m.fat_g || 0), 0),
+      },
+    }));
+  };
 
   // Charger l'utilisateur depuis SQLite au démarrage
   useEffect(() => {
@@ -158,26 +179,6 @@ export default function App() {
     setToast(message);
   };
 
-  // Recalcule les totaux du jour dans profile à partir des repas
-  const applyDailyTotals = (todayMeals) => {
-    setProfile((prev) => ({
-      ...prev,
-      caloriesConsumed: todayMeals.reduce((sum, m) => sum + (m.kcal || 0), 0),
-      protein: {
-        ...prev.protein,
-        consumed: todayMeals.reduce((sum, m) => sum + (m.protein_g || 0), 0),
-      },
-      carbs: {
-        ...prev.carbs,
-        consumed: todayMeals.reduce((sum, m) => sum + (m.carbs_g || 0), 0),
-      },
-      fat: {
-        ...prev.fat,
-        consumed: todayMeals.reduce((sum, m) => sum + (m.fat_g || 0), 0),
-      },
-    }));
-  };
-
   // Ajoute un repas : sauvegarde dans SQLite puis recharge
   const addMeal = async (partialMeal) => {
     const now = new Date();
@@ -271,9 +272,9 @@ export default function App() {
   const isDetailToDetail = DETAIL_SCREENS.has(prev) && DETAIL_SCREENS.has(screen);
   const useFade = isTabToTab || isDetailToDetail || (!isGoingForward && !isGoingBack);
 
-  const enteringAnimation = isGoingForward
-  ? SlideInRight.duration(200).springify().damping(24).stiffness(200)
-  : SlideInLeft.duration(200).springify().damping(26).stiffness(200);
+const enteringAnimation = isGoingForward
+  ? SlideInRight.duration(240).easing(Easing.bezier(0.22, 1, 0.36, 1))
+  : SlideInLeft.duration(220).easing(Easing.bezier(0.22, 1, 0.36, 1));
 
   if (isAppLocked) {
     const minutes = Math.floor(timeLeft / 60);
