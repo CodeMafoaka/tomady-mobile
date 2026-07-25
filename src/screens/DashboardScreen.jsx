@@ -216,7 +216,7 @@ export function DashboardScreen({ go }) {
           </View>
           <View className="flex-1">
             <Text className="text-[13px] font-extrabold uppercase tracking-[0.5px]" style={{ color: C.violetDeep }}>
-              Insight de Gemmify
+              Insight de Tomady
             </Text>
             <Text
               style={{ fontFamily: FONTS.displayItalic, color: C.inkSoft }}

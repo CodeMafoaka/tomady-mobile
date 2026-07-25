@@ -92,7 +92,7 @@ export function GoalScreen({ go }) {
         <View className="mt-2 flex-row rounded-[14px] p-[14px]" style={{ backgroundColor: C.amberTint, gap: 10 }}>
           <Info size={16} color={C.amberDeep} style={{ marginTop: 1 }} />
           <Text className="flex-1 text-xs leading-[18px]" style={{ color: C.amberDeep2 }}>
-            Les recommandations de Gemmify ne remplacent pas les conseils d'un médecin ou d'un professionnel de santé.
+            Les recommandations de Tomady ne remplacent pas les conseils d'un médecin ou d'un professionnel de santé.
           </Text>
         </View>
       </ScrollView>

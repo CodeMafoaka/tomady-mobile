@@ -93,7 +93,7 @@ export function ProfileScreen() {
         <View className="flex-row rounded-2xl p-[14px]" style={{ backgroundColor: C.amberTint, gap: 9 }}>
           <Info size={15} color={C.amberDeep} style={{ marginTop: 1 }} />
           <Text className="flex-1 text-[11px] leading-[17px]" style={{ color: C.amberDeep2 }}>
-            Gemmify fournit des informations générales de suivi et de bien-être. Ces recommandations ne remplacent
+            Tomady fournit des informations générales de suivi et de bien-être. Ces recommandations ne remplacent
             pas l'avis d'un médecin. En cas de problème de santé, consultez un professionnel qualifié.
           </Text>
         </View>

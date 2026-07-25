@@ -52,7 +52,7 @@ export function FoodDetailScreen({ food, go }) {
             className="text-[11.5px] font-extrabold uppercase tracking-[0.4px]"
             style={{ color: isGood ? C.greenDeep : C.amberDeep }}
           >
-            Pourquoi Gemmify vous recommande ce plat
+            Pourquoi Tomady vous recommande ce plat
           </Text>
           <Text style={{ fontFamily: FONTS.displayItalic, color: C.inkSoft }} className="mt-2 text-[13.5px] leading-[21px]">
             {isGood

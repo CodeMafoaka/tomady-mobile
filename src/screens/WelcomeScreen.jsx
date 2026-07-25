@@ -26,7 +26,7 @@ export function WelcomeScreen({ go }) {
             style={{ fontFamily: FONTS.display, color: C.greenDeep }}
             className="mb-[10px] text-[15px] font-semibold uppercase tracking-[2px]"
           >
-            Gemmify
+            Tomady
           </Text>
 
           <Text
@@ -45,7 +45,7 @@ export function WelcomeScreen({ go }) {
       <View className="px-6 pb-[34px]" style={{ zIndex: 1 }}>
         <Pressable
           onPress={() => go("goal")}
-          accessibilityLabel="Commencer l'expérience Gemmify"
+          accessibilityLabel="Commencer l'expérience Tomady"
           accessibilityRole="button"
           className="w-full items-center rounded-[18px] py-4 active:opacity-80"
           style={{

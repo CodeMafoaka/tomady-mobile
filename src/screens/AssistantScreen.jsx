@@ -19,7 +19,7 @@ export function AssistantScreen({ openVoice }) {
         </LinearGradient>
         <View className="flex-1">
           <Text style={{ fontFamily: FONTS.display, color: C.ink }} className="text-[16px] font-semibold">
-            Assistant Gemmify
+            Assistant Tomady
           </Text>
           <Text className="text-[11.5px]" style={{ color: C.muted }}>Votre intelligence nutritionnelle personnelle</Text>
         </View>

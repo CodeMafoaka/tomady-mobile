@@ -1,5 +1,5 @@
 /* ============================================================
-   GEMMIFY — DESIGN TOKENS (React Native / Expo Go / NativeWind)
+   TOMADY — DESIGN TOKENS (React Native / Expo Go / NativeWind)
    Palette imposée : vert marque #2ECC71 / fond blanc #FFFFFF /
    attention #F39C12 / danger #E74C3C.
    Typo : Fraunces (voix du coach, headlines & insights IA en
