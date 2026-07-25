@@ -17,30 +17,29 @@ export function GoalScreen({ go }) {
 
   return (
     <SafeAreaView className="flex-1" style={{ backgroundColor: C.white }}>
-      <TopBar title="Votre objectif" onBack={() => go("welcome")} />
+      <TopBar title="Votre objectif" onBack={() => go("personalInfo")} />
 
       <View className="px-5 pb-1">
         {/* Step progress indicator */}
         <View className="flex-row items-center" style={{ gap: 8 }}>
-          {[1, 2, 3, 4].map((step) => (
+          {[1, 2, 3, 4, 5].map((step) => (
             <View key={step} className="flex-1 flex-row items-center">
               <View
                 className="h-2 flex-1 rounded-full"
                 style={{
-                  backgroundColor: step <= 2 ? C.green : C.line,
-                  opacity: step <= 2 ? 1 : 0.5,
+                  backgroundColor: step <= 3 ? C.green : C.line,
+                  opacity: step <= 3 ? 1 : 0.5,
                 }}
               />
-              {step < 4 && <View className="w-0" />}
             </View>
           ))}
         </View>
         <View className="mt-[6px] flex-row justify-between">
-          {["Bienvenue", "Objectif", "Profil", "Prêt"].map((label, i) => (
+          {["Bienvenue", "Infos", "Objectif", "Profil", "Prêt"].map((label, i) => (
             <Text
               key={label}
               className="text-[10.5px] font-semibold"
-              style={{ color: i <= 1 ? C.greenDeep : C.muted, opacity: i <= 1 ? 1 : 0.5 }}
+              style={{ color: i <= 2 ? C.greenDeep : C.muted, opacity: i <= 2 ? 1 : 0.5 }}
             >
               {label}
             </Text>

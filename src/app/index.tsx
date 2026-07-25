@@ -19,6 +19,7 @@ import {
 import { C } from "../constant/theme";
 import { BottomNav } from "../components/BottomNav";
 import { WelcomeScreen } from "../screens/WelcomeScreen";
+import { PersonalInfoScreen } from "../screens/PersonalInfoScreen";
 import { GoalScreen } from "../screens/GoalScreen";
 import { DashboardScreen } from "../screens/DashboardScreen";
 import { JournalScreen } from "../screens/JournalScreen";
@@ -123,6 +124,13 @@ export default function App() {
   const renderScreen = () => {
     switch (screen) {
       case "welcome": return <WelcomeScreen go={go} />;
+      case "personalInfo":
+        return (
+          <PersonalInfoScreen
+            go={go}
+            onNext={(data) => updateProfile({ ...profile, ...data })}
+          />
+        );
       case "goal": return <GoalScreen go={go} />;
       case "dashboard": return <DashboardScreen go={go} />;
       case "journal": return <JournalScreen go={go} meals={meals} />;

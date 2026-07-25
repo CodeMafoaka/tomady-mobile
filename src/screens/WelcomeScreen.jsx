@@ -44,7 +44,7 @@ export function WelcomeScreen({ go }) {
 
       <View className="px-6 pb-[34px]" style={{ zIndex: 1 }}>
         <Pressable
-          onPress={() => go("goal")}
+          onPress={() => go("personalInfo")}
           accessibilityLabel="Commencer l'expérience Tomady"
           accessibilityRole="button"
           className="w-full items-center rounded-[18px] py-4 active:opacity-80"
