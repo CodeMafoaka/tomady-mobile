@@ -34,13 +34,13 @@ export const WEIGHT_DATA = [
 ];
 
 export const FOODS = [
-  { id: 1, name: "Romazava", cat: "Plats locaux", kcal: 310, p: 28, c: 14, f: 15, status: "good" },
-  { id: 2, name: "Ravitoto sy henakisoa", cat: "Plats locaux", kcal: 480, p: 22, c: 12, f: 34, status: "warn" },
-  { id: 3, name: "Vary amin'anana", cat: "Plats locaux", kcal: 260, p: 9, c: 45, f: 5, status: "good" },
-  { id: 4, name: "Salade de quinoa & poulet", cat: "Déjeuner", kcal: 390, p: 32, c: 38, f: 10, status: "good" },
-  { id: 5, name: "Smoothie mangue-banane", cat: "Boissons", kcal: 210, p: 3, c: 48, f: 1, status: "good" },
-  { id: 6, name: "Beignets sucrés (mofo)", cat: "Snacks", kcal: 340, p: 4, c: 40, f: 17, status: "warn" },
-  { id: 7, name: "Cari de crevettes", cat: "Dîner", kcal: 300, p: 24, c: 10, f: 18, status: "bad" },
+  { id: 1, name: "Romazava", cat: "Plats locaux", kcal: 310, p: 28, c: 14, f: 15, status: "good", allergens: [] },
+  { id: 2, name: "Ravitoto sy henakisoa", cat: "Plats locaux", kcal: 480, p: 22, c: 12, f: 34, status: "warn", allergens: [] },
+  { id: 3, name: "Vary amin'anana", cat: "Plats locaux", kcal: 260, p: 9, c: 45, f: 5, status: "good", allergens: [] },
+  { id: 4, name: "Salade de quinoa & poulet", cat: "Déjeuner", kcal: 390, p: 32, c: 38, f: 10, status: "good", allergens: [] },
+  { id: 5, name: "Smoothie mangue-banane", cat: "Boissons", kcal: 210, p: 3, c: 48, f: 1, status: "good", allergens: [] },
+  { id: 6, name: "Beignets sucrés (mofo)", cat: "Snacks", kcal: 340, p: 4, c: 40, f: 17, status: "warn", allergens: ["Gluten"] },
+  { id: 7, name: "Cari de crevettes", cat: "Dîner", kcal: 300, p: 24, c: 10, f: 18, status: "bad", allergens: ["Fruits de mer"] },
 ];
 
 export const CATEGORIES = ["Plats locaux", "Petit-déjeuner", "Déjeuner", "Dîner", "Fruits", "Légumes", "Protéines", "Snacks", "Boissons"];
