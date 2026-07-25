@@ -1,7 +1,7 @@
 import { View, Text, Pressable } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
 import { Home, BookOpen, Compass, Sparkles, User } from "lucide-react-native";
 import { C } from "@/constant/theme";
+import { AIAssistantButton } from "./AIAssistantButton";
 
 export const TABS = [
   { id: "dashboard", label: "Accueil", Icon: Home },
@@ -23,33 +23,10 @@ export function BottomNav({ active, go }) {
 
         if (isAssistant) {
           return (
-            <Pressable
+            <AIAssistantButton
               key={id}
               onPress={() => go(id)}
-              accessibilityLabel={label}
-              accessibilityRole="tab"
-              className="items-center"
-              style={{ gap: 4, transform: [{ translateY: -14 }] }}
-            >
-              <LinearGradient
-                colors={[C.green, C.greenDeep]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                className="h-[50px] w-[50px] items-center justify-center rounded-full"
-                style={{
-                  shadowColor: C.green,
-                  shadowOpacity: 0.6,
-                  shadowRadius: 12,
-                  shadowOffset: { width: 0, height: 8 },
-                  elevation: 6,
-                }}
-              >
-                <Icon size={21} color={C.white} />
-              </LinearGradient>
-              <Text className="text-[10px] font-bold" style={{ color: C.greenDeep }}>
-                {label}
-              </Text>
-            </Pressable>
+            />
           );
         }
 
