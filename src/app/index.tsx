@@ -21,6 +21,7 @@ import { WelcomeScreen } from "../screens/WelcomeScreen";
 import { GoalScreen } from "../screens/GoalScreen";
 import { DashboardScreen } from "../screens/DashboardScreen";
 import { JournalScreen } from "../screens/JournalScreen";
+import { CatalogueScreen } from "../screens/CatalogueScreen";
 import { FoodDetailScreen } from "../screens/FoodDetailScreen";
 import { StatsScreen } from "../screens/StatsScreen";
 import { AssistantScreen } from "../screens/AssistantScreen";
