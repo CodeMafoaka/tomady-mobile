@@ -1,11 +1,44 @@
-import { View, Text, Pressable, ScrollView, TextInput } from "react-native";
+import { useState, useRef } from "react";
+import { View, Text, Pressable, ScrollView, TextInput, ActivityIndicator } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { Sparkles, Send, Mic, Check } from "lucide-react-native";
 import { C, FONTS } from "../constant/theme";
 import { CHAT, SUGGESTIONS } from "../data/mockData";
+import { analyzeMealText } from "../services/aiService";
 
-export function AssistantScreen({ openVoice }) {
+export function AssistantScreen({ openVoice, addMeal }) {
+  const [messages, setMessages] = useState(CHAT);
+  const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [savedCards, setSavedCards] = useState({});
+  const scrollRef = useRef(null);
+
+  const send = async (textOverride) => {
+    const text = (textOverride ?? input).trim();
+    if (!text || loading) return;
+    setMessages((prev) => [...prev, { from: "user", text }]);
+    setInput("");
+    setLoading(true);
+    try {
+      const result = await analyzeMealText(text);
+      setMessages((prev) => [...prev, { from: "ai", text: result.text, card: result.card }]);
+    } catch (e) {
+      setMessages((prev) => [
+        ...prev,
+        { from: "ai", text: "Désolé, une erreur est survenue pendant l'analyse. Réessayez." },
+      ]);
+    } finally {
+      setLoading(false);
+      requestAnimationFrame(() => scrollRef.current?.scrollToEnd({ animated: true }));
+    }
+  };
+
+  const saveCard = (index, card) => {
+    setSavedCards((prev) => ({ ...prev, [index]: true }));
+    addMeal?.({ name: card.note?.slice(0, 40) || "Repas via Assistant", kcal: card.kcal, status: "good" });
+  };
+
   return (
     <SafeAreaView className="flex-1" style={{ backgroundColor: C.canvas }}>
       <View className="flex-row items-center px-5 pb-[14px] pt-[6px]" style={{ gap: 12 }}>
@@ -29,8 +62,12 @@ export function AssistantScreen({ openVoice }) {
         </View>
       </View>
 
-      <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 12, gap: 12 }}>
-        {CHAT.map((m, i) =>
+      <ScrollView
+        ref={scrollRef}
+        contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 12, gap: 12 }}
+        onContentSizeChange={() => scrollRef.current?.scrollToEnd({ animated: true })}
+      >
+        {messages.map((m, i) =>
           m.from === "user" ? (
             <View
               key={i}
@@ -59,18 +96,28 @@ export function AssistantScreen({ openVoice }) {
                     {m.card.note}
                   </Text>
                   <Pressable
+                    onPress={() => saveCard(i, m.card)}
+                    disabled={!!savedCards[i]}
                     accessibilityLabel="Enregistrer dans mon journal"
                     accessibilityRole="button"
                     className="mt-[10px] flex-row items-center justify-center rounded-[10px] py-[10px] active:opacity-80"
-                    style={{ backgroundColor: C.violet, gap: 6 }}
+                    style={{ backgroundColor: savedCards[i] ? C.muted : C.violet, gap: 6 }}
                   >
                     <Check size={13} color={C.white} />
-                    <Text className="text-xs font-bold" style={{ color: C.white }}>Enregistrer dans mon journal</Text>
+                    <Text className="text-xs font-bold" style={{ color: C.white }}>
+                      {savedCards[i] ? "Enregistré ✓" : "Enregistrer dans mon journal"}
+                    </Text>
                   </Pressable>
                 </View>
               )}
             </View>
           )
+        )}
+        {loading && (
+          <View className="self-start flex-row items-center rounded-[16px] rounded-bl-[4px] border px-[15px] py-[11px]" style={{ backgroundColor: C.card, borderColor: C.line, gap: 8 }}>
+            <ActivityIndicator size="small" color={C.violet} />
+            <Text className="text-[12.5px]" style={{ color: C.muted }}>Analyse en cours...</Text>
+          </View>
         )}
       </ScrollView>
 
@@ -80,14 +127,18 @@ export function AssistantScreen({ openVoice }) {
         contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 10, gap: 8 }}
       >
         {SUGGESTIONS.map((s) => (
-          <View key={s} className="rounded-full border px-[13px] py-2" style={{ backgroundColor: C.card, borderColor: C.line }}>
+          <Pressable key={s} onPress={() => send(s)} className="rounded-full border px-[13px] py-2" style={{ backgroundColor: C.card, borderColor: C.line }}>
             <Text className="text-[11.5px]" style={{ color: C.inkSoft }}>{s}</Text>
-          </View>
+          </Pressable>
         ))}
       </ScrollView>
 
       <View className="flex-row items-center px-5 pb-7 pt-[6px]" style={{ gap: 10 }}>
         <TextInput
+          value={input}
+          onChangeText={setInput}
+          onSubmitEditing={() => send()}
+          returnKeyType="send"
           placeholder="Écrire un message..."
           placeholderTextColor={C.muted}
           accessibilityLabel="Message"
@@ -96,11 +147,14 @@ export function AssistantScreen({ openVoice }) {
           style={{ backgroundColor: C.card, borderColor: C.line, color: C.ink }}
         />
         <Pressable
+          onPress={() => send()}
+          disabled={loading || !input.trim()}
           accessibilityLabel="Envoyer le message"
           accessibilityRole="button"
           className="h-[44px] w-[44px] items-center justify-center rounded-full active:opacity-80"
           style={{
             backgroundColor: C.ink,
+            opacity: loading || !input.trim() ? 0.5 : 1,
             shadowColor: '#000',
             shadowOpacity: 0.15,
             shadowRadius: 8,

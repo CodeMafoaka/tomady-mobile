@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { View, Text, Pressable, ScrollView } from "react-native";
+import { View, Text, Pressable, ScrollView, TextInput } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Search, Leaf } from "lucide-react-native";
 import { C } from "../constant/theme";
@@ -9,7 +9,10 @@ import { FOODS, CATEGORIES } from "../data/mockData";
 
 export function CatalogueScreen({ go, openFood }) {
   const [cat, setCat] = useState("Plats locaux");
-  const list = FOODS.filter((f) => f.cat === cat);
+  const [query, setQuery] = useState("");
+  const list = FOODS.filter(
+    (f) => f.cat === cat && f.name.toLowerCase().includes(query.trim().toLowerCase())
+  );
 
   return (
     <SafeAreaView className="flex-1" style={{ backgroundColor: C.canvas }}>
@@ -21,7 +24,15 @@ export function CatalogueScreen({ go, openFood }) {
           style={{ backgroundColor: C.card, borderColor: C.line, gap: 10 }}
         >
           <Search size={16} color={C.muted} />
-          <Text className="text-[13.5px]" style={{ color: C.muted }}>Rechercher un aliment ou un plat...</Text>
+          <TextInput
+            value={query}
+            onChangeText={setQuery}
+            placeholder="Rechercher un aliment ou un plat..."
+            placeholderTextColor={C.muted}
+            accessibilityLabel="Rechercher un aliment"
+            className="flex-1 text-[13.5px]"
+            style={{ color: C.ink }}
+          />
         </View>
       </View>
 
