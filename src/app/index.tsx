@@ -27,6 +27,7 @@ import { CatalogueScreen } from "../screens/CatalogueScreen";
 import { FoodDetailScreen } from "../screens/FoodDetailScreen";
 import { StatsScreen } from "../screens/StatsScreen";
 import { AssistantScreen } from "../screens/AssistantScreen";
+import { Toast } from "../components/Toast";
 import { VoiceModal } from "../screens/VoiceModal";
 import { AlertsScreen } from "../screens/AlertsScreen";
 import { ProfileScreen } from "../screens/ProfileScreen";
@@ -49,6 +50,7 @@ export default function App() {
 
   const [screen, setScreen] = useState("welcome");
   const [voiceOpen, setVoiceOpen] = useState(false);
+  const [toast, setToast] = useState(null);
   const [food, setFood] = useState(FOODS[0]);
   const [meals, setMeals] = useState(MEALS_TODAY);
   const [profile, setProfile] = useState(USER);
@@ -101,6 +103,10 @@ export default function App() {
     setProfile(newProfile);
   };
 
+  const showToast = (message) => {
+    setToast(message);
+  };
+
   // Ajoute un repas dans le premier créneau vide du journal du jour
   // (repère : kcal === null dans mockData.js). Sinon, l'ajoute en fin de liste.
   const addMeal = (partialMeal) => {
@@ -116,6 +122,7 @@ export default function App() {
       }
       return [...prev, meal];
     });
+    showToast("Repas ajouté au journal \u2713");
   };
   const openFood = (f) => {
     setFood(f);
@@ -219,6 +226,7 @@ export default function App() {
         <View className="flex-1" style={{ position: "relative" }}>
           {renderScreen()}
           {voiceOpen && <VoiceModal close={() => setVoiceOpen(false)} addMeal={addMeal} />}
+          {toast && <Toast message={toast} onDone={() => setToast(null)} />}
         </View>
         {showNav && <BottomNav active={screen} go={go} />}
       </View>
