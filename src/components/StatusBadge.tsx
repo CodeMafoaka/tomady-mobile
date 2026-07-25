@@ -1,7 +1,12 @@
 import { View, Text } from "react-native";
 import { C } from "../constant/theme";
 
-export function StatusBadge({ level, textOverride }) {
+interface StatusBadgeProps {
+  level: "good" | "warn" | "bad";
+  textOverride?: string;
+}
+
+export function StatusBadge({ level, textOverride }: StatusBadgeProps) {
   const map = {
     good: { bg: C.greenTint, fg: C.greenDeep, dot: C.green, text: textOverride || "Recommandé pour vous" },
     warn: { bg: C.amberTint, fg: C.amberDeep, dot: C.amber, text: textOverride || "À consommer avec modération" },
