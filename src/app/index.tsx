@@ -1,12 +1,7 @@
-import { useState, useEffect, useRef } from "react";
-import { View, Text, TextInput, Pressable, StyleSheet } from "react-native";
-import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
-import { Lock } from "lucide-react-native";
-import { StatusBar } from "expo-status-bar";
 import {
-  useFonts,
   Fraunces_500Medium_Italic,
   Fraunces_600SemiBold,
+  useFonts,
 } from "@expo-google-fonts/fraunces";
 import {
   Inter_400Regular,
@@ -15,35 +10,38 @@ import {
   Inter_700Bold,
   Inter_800ExtraBold,
 } from "@expo-google-fonts/inter";
+import { StatusBar } from "expo-status-bar";
+import { Lock } from "lucide-react-native";
+import { useEffect, useRef, useState } from "react";
+import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 
 import Animated, {
   FadeIn,
   FadeOut,
   SlideInLeft,
-  SlideInRight,
-  SlideOutLeft,
-  SlideOutRight,
+  SlideInRight
 } from "react-native-reanimated";
-import { C } from "../constant/theme";
 import { BottomNav } from "../components/BottomNav";
-import { WelcomeScreen } from "../screens/WelcomeScreen";
-import { PersonalInfoScreen } from "../screens/PersonalInfoScreen";
-import { GoalScreen } from "../screens/GoalScreen";
-import { DashboardScreen } from "../screens/DashboardScreen";
-import { JournalScreen } from "../screens/JournalScreen";
-import { CatalogueScreen } from "../screens/CatalogueScreen";
-import { FoodDetailScreen } from "../screens/FoodDetailScreen";
-import { StatsScreen } from "../screens/StatsScreen";
-import { AssistantScreen } from "../screens/AssistantScreen";
 import { Toast } from "../components/Toast";
-import { VoiceModal } from "../screens/VoiceModal";
-import { AlertsScreen } from "../screens/AlertsScreen";
-import { ProfileScreen } from "../screens/ProfileScreen";
-import { ProfileEditScreen } from "../screens/ProfileEditScreen";
-import { PrivacyScreen } from "../screens/PrivacyScreen";
-import { ForbiddenFoodsScreen } from "../screens/ForbiddenFoodsScreen";
+import { C } from "../constant/theme";
 import { FOODS, MEALS_TODAY } from "../data/mockData";
-import { initDatabase, getUser, saveUser } from "../services/database";
+import { AlertsScreen } from "../screens/AlertsScreen";
+import { AssistantScreen } from "../screens/AssistantScreen";
+import { CatalogueScreen } from "../screens/CatalogueScreen";
+import { DashboardScreen } from "../screens/DashboardScreen";
+import { FoodDetailScreen } from "../screens/FoodDetailScreen";
+import { ForbiddenFoodsScreen } from "../screens/ForbiddenFoodsScreen";
+import { GoalScreen } from "../screens/GoalScreen";
+import { JournalScreen } from "../screens/JournalScreen";
+import { PersonalInfoScreen } from "../screens/PersonalInfoScreen";
+import { PrivacyScreen } from "../screens/PrivacyScreen";
+import { ProfileEditScreen } from "../screens/ProfileEditScreen";
+import { ProfileScreen } from "../screens/ProfileScreen";
+import { StatsScreen } from "../screens/StatsScreen";
+import { VoiceModal } from "../screens/VoiceModal";
+import { WelcomeScreen } from "../screens/WelcomeScreen";
+import { getUser, initDatabase, saveUser } from "../services/database";
 
 const MAIN_TABS = new Set(["dashboard", "journal", "catalogue", "assistant", "profile"]);
 
@@ -221,11 +219,8 @@ export default function App() {
   const useFade = isTabToTab || isDetailToDetail || (!isGoingForward && !isGoingBack);
 
   const enteringAnimation = isGoingForward
-    ? SlideInRight.duration(320).springify().damping(24).stiffness(200)
-    : SlideInLeft.duration(280).springify().damping(26).stiffness(200);
-  const exitingAnimation = isGoingForward
-    ? SlideOutLeft.duration(200)
-    : SlideOutRight.duration(200);
+  ? SlideInRight.duration(200).springify().damping(24).stiffness(200).overshootClamping(1)
+  : SlideInLeft.duration(200).springify().damping(26).stiffness(200).overshootClamping(1);
 
   if (isAppLocked) {
     const minutes = Math.floor(timeLeft / 60);
@@ -298,7 +293,6 @@ export default function App() {
           <Animated.View
             key={screen}
             entering={useFade ? FadeIn.duration(280) : enteringAnimation}
-            exiting={useFade ? FadeOut.duration(150) : exitingAnimation}
             style={[StyleSheet.absoluteFill, { overflow: "hidden" }]}
           >
             {renderScreen()}
