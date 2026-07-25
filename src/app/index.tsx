@@ -276,14 +276,14 @@ export default function App() {
 
   return (
     <SafeAreaProvider>
-      <View className="flex-1" style={{ backgroundColor: C.canvas }}>
+      <View className="flex-1" style={{ backgroundColor: C.canvas, overflow: "hidden" }}>
         <StatusBar style="dark" />
         <View className="flex-1" style={{ position: "relative", overflow: "hidden" }}>
           <Animated.View
             key={screen}
             entering={useFade ? FadeIn.duration(280) : enteringAnimation}
             exiting={useFade ? FadeOut.duration(150) : exitingAnimation}
-            style={StyleSheet.absoluteFill}
+            style={[StyleSheet.absoluteFill, { overflow: "hidden" }]}
           >
             {renderScreen()}
           </Animated.View>
