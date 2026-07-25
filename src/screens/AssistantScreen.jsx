@@ -119,10 +119,11 @@ export function AssistantScreen({ openVoice, addMeal }) {
         )}
       </ScrollView>
 
+      <View className="h-[36px] justify-center mb-3">
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 10, gap: 8 }}
+        contentContainerStyle={{ paddingHorizontal: 16, gap: 6 }}
       >
         {SUGGESTIONS.map((s) => (
           <Pressable key={s} onPress={() => send(s)} className="rounded-full border px-[13px] py-2" style={{ backgroundColor: C.card, borderColor: C.line }}>
@@ -130,6 +131,7 @@ export function AssistantScreen({ openVoice, addMeal }) {
           </Pressable>
         ))}
       </ScrollView>
+      </View>
 
       <View className="flex-row items-center px-5 pb-7 pt-[6px]" style={{ gap: 10 }}>
         <TextInput
