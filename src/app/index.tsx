@@ -25,7 +25,7 @@ import Animated, {
 import { BottomNav } from "../components/BottomNav";
 import { Toast } from "../components/Toast";
 import { C } from "../constant/theme";
-import { FOODS, MEALS_TODAY } from "../data/mockData";
+import { FOODS } from "../data/mockData";
 import { AlertsScreen } from "../screens/AlertsScreen";
 import { AssistantScreen } from "../screens/AssistantScreen";
 import { CatalogueScreen } from "../screens/CatalogueScreen";
@@ -41,7 +41,7 @@ import { ProfileScreen } from "../screens/ProfileScreen";
 import { StatsScreen } from "../screens/StatsScreen";
 import { VoiceModal } from "../screens/VoiceModal";
 import { WelcomeScreen } from "../screens/WelcomeScreen";
-import { getUser, initDatabase, saveUser } from "../services/database";
+import { getUser, initDatabase, saveUser, getTodayMeals, addMealEntry } from "../services/database";
 
 const MAIN_TABS = new Set(["dashboard", "journal", "catalogue", "assistant", "profile"]);
 
@@ -60,7 +60,7 @@ export default function App() {
   const [voiceOpen, setVoiceOpen] = useState(false);
   const [toast, setToast] = useState(null);
   const [food, setFood] = useState(FOODS[0]);
-  const [meals, setMeals] = useState(MEALS_TODAY);
+  const [meals, setMeals] = useState([]);
   const [profile, setProfile] = useState({});
   const [dbReady, setDbReady] = useState(false);
 
@@ -72,6 +72,12 @@ export default function App() {
       if (saved) {
         setProfile(saved);
         setScreen("dashboard");
+        // Charger les repas du jour
+        const todayMeals = await getTodayMeals();
+        if (todayMeals.length > 0) {
+          setMeals(todayMeals);
+          applyDailyTotals(todayMeals);
+        }
       }
       setDbReady(true);
     })();
@@ -152,21 +158,48 @@ export default function App() {
     setToast(message);
   };
 
-  // Ajoute un repas dans le premier créneau vide du journal du jour
-  // (repère : kcal === null dans mockData.js). Sinon, l'ajoute en fin de liste.
-  const addMeal = (partialMeal) => {
-    setMeals((prev) => {
-      const emptyIdx = prev.findIndex((m) => m.kcal === null);
-      const now = new Date();
-      const time = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
-      const meal = { time, status: "good", ...partialMeal };
-      if (emptyIdx !== -1) {
-        const next = [...prev];
-        next[emptyIdx] = { ...next[emptyIdx], ...meal };
-        return next;
-      }
-      return [...prev, meal];
+  // Recalcule les totaux du jour dans profile à partir des repas
+  const applyDailyTotals = (todayMeals) => {
+    setProfile((prev) => ({
+      ...prev,
+      caloriesConsumed: todayMeals.reduce((sum, m) => sum + (m.kcal || 0), 0),
+      protein: {
+        ...prev.protein,
+        consumed: todayMeals.reduce((sum, m) => sum + (m.protein_g || 0), 0),
+      },
+      carbs: {
+        ...prev.carbs,
+        consumed: todayMeals.reduce((sum, m) => sum + (m.carbs_g || 0), 0),
+      },
+      fat: {
+        ...prev.fat,
+        consumed: todayMeals.reduce((sum, m) => sum + (m.fat_g || 0), 0),
+      },
+    }));
+  };
+
+  // Ajoute un repas : sauvegarde dans SQLite puis recharge
+  const addMeal = async (partialMeal) => {
+    const now = new Date();
+    const time = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+
+    // Détermine le prochain meal_order (0‑3)
+    const existingOrders = meals.map((m) => m.meal_order).filter((o) => o !== null);
+    const mealOrder = existingOrders.length > 0
+      ? Math.min(3, Math.max(...existingOrders) + 1)
+      : 0;
+
+    await addMealEntry({
+      ...partialMeal,
+      time,
+      meal_order: mealOrder,
     });
+
+    // Recharge les repas du jour depuis SQLite
+    const todayMeals = await getTodayMeals();
+    setMeals(todayMeals);
+    applyDailyTotals(todayMeals);
+
     showToast("Repas ajouté au journal \u2713");
   };
   const openFood = (f) => {
@@ -191,7 +224,7 @@ export default function App() {
             onNext={(data) => updateProfile({ ...profile, ...data })}
           />
         );
-      case "dashboard": return <DashboardScreen go={go} profile={profile} />;
+      case "dashboard": return <DashboardScreen go={go} profile={profile} meals={meals} />;
       case "journal": return <JournalScreen go={go} meals={meals} />;
       case "catalogue": return <CatalogueScreen go={go} openFood={openFood} profile={profile} />;
       case "detail": return <FoodDetailScreen food={food} go={go} profile={profile} />;
@@ -199,10 +232,20 @@ export default function App() {
       case "assistant": return <AssistantScreen openVoice={() => setVoiceOpen(true)} addMeal={addMeal} />;
       case "alerts": return <AlertsScreen go={go} />;
       case "profile": return <ProfileScreen go={go} profile={profile} />;
-      case "profileEdit": return <ProfileEditScreen onBack={() => go("profile")} onSave={updateProfile} profile={profile} />;
+      case "profileEdit": return (
+        <ProfileEditScreen
+          onBack={() => go("profile")}
+          onSave={async (newProfile) => {
+            await updateProfile(newProfile);
+            showToast("Profil mis à jour \u2713");
+            go("profile");
+          }}
+          profile={profile}
+        />
+      );
       case "privacy": return <PrivacyScreen go={go} />;
       case "forbiddenFoods": return <ForbiddenFoodsScreen go={go} openFood={openFood} profile={profile} />;
-      default: return <DashboardScreen go={go} profile={profile} />;
+      default: return <DashboardScreen go={go} profile={profile} meals={meals} />;
     }
   };
 

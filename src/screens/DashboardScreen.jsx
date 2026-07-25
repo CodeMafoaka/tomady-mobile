@@ -4,7 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { Bell, Beef, Wheat, Droplet, Sparkles, UtensilsCrossed, ChevronRight } from "lucide-react-native";
 import { C, FONTS } from "../constant/theme";
-import { USER, MEALS_TODAY } from "../data/mockData";
+import { USER } from "../data/mockData";
 
 /* ───────────────────────────────────────────
    FadeIn — animation d'entrée stagger
@@ -67,10 +67,11 @@ function MacroRow({ label, consumed, goal, color, Icon }) {
 /* ───────────────────────────────────────────
    DashboardScreen
    ─────────────────────────────────────────── */
-export function DashboardScreen({ go, profile: propProfile }) {
+export function DashboardScreen({ go, profile: propProfile, meals: propMeals }) {
   const p = propProfile || USER;
-  const pct = p.caloriesConsumed / p.calorieGoal;
-  const remaining = p.calorieGoal - p.caloriesConsumed;
+  const todayMeals = propMeals || [];
+  const pct = Math.min(1, (p.caloriesConsumed || 0) / Math.max(1, p.calorieGoal));
+  const remaining = Math.max(0, (p.calorieGoal || 2000) - (p.caloriesConsumed || 0));
 
   const macros = [
     { label: "Protéines", ...p.protein, color: C.green, Icon: Beef },
@@ -261,47 +262,51 @@ export function DashboardScreen({ go, profile: propProfile }) {
                     elevation: 2,
                   }}
                 >
-                  {MEALS_TODAY.map((m, i) => {
-                    const dotColor =
-                      m.status === "good" ? C.green
-                        : m.status === "warn" ? C.amber
-                        : C.line;
+                  {todayMeals.length === 0 ? (
+                    <View className="items-center py-6" style={{ gap: 8 }}>
+                      <UtensilsCrossed size={20} color={C.muted} />
+                      <Text className="text-[12px]" style={{ color: C.muted }}>
+                        Aucun repas pour aujourd'hui
+                      </Text>
+                    </View>
+                  ) : (
+                    todayMeals.map((m, i) => {
+                      const dotColor =
+                        m.status === "good" ? C.green
+                          : m.status === "warn" ? C.amber
+                          : C.line;
 
-                    return (
-                      <Pressable
-                        key={i}
-                        onPress={m.kcal ? null : () => go("assistant")}
-                        className="flex-row px-4 py-[14px] active:opacity-60"
-                        style={{
-                          gap: 12,
-                          borderBottomWidth: i < MEALS_TODAY.length - 1 ? 1 : 0,
-                          borderBottomColor: C.line,
-                        }}
-                      >
-                        {/* Timeline dot + ligne de connexion */}
-                        <View className="items-center self-stretch justify-start" style={{ width: 14, gap: 2 }}>
-                          <View
-                            className="h-[10px] w-[10px] rounded-full"
-                            style={{ backgroundColor: dotColor }}
-                          />
-                          {i < MEALS_TODAY.length - 1 && (
-                            <View className="w-[1px] flex-1" style={{ backgroundColor: C.line }} />
-                          )}
-                        </View>
+                      return (
+                        <Pressable
+                          key={m.id || i}
+                          onPress={() => {}}
+                          className="flex-row px-4 py-[14px] active:opacity-60"
+                          style={{
+                            gap: 12,
+                            borderBottomWidth: i < todayMeals.length - 1 ? 1 : 0,
+                            borderBottomColor: C.line,
+                          }}
+                        >
+                          {/* Timeline dot + ligne */}
+                          <View className="items-center self-stretch justify-start" style={{ width: 14, gap: 2 }}>
+                            <View
+                              className="h-[10px] w-[10px] rounded-full"
+                              style={{ backgroundColor: dotColor }}
+                            />
+                            {i < todayMeals.length - 1 && (
+                              <View className="w-[1px] flex-1" style={{ backgroundColor: C.line }} />
+                            )}
+                          </View>
 
-                        <View className="flex-1 justify-center">
-                          <Text
-                            className="text-[14px] font-semibold"
-                            style={{ color: m.kcal ? C.ink : C.muted }}
-                          >
-                            {m.name}
-                          </Text>
-                          <Text className="mt-[2px] text-[12px]" style={{ color: C.muted }}>
-                            {m.time}
-                          </Text>
-                        </View>
+                          <View className="flex-1 justify-center">
+                            <Text className="text-[14px] font-semibold" style={{ color: C.ink }}>
+                              {m.name}
+                            </Text>
+                            <Text className="mt-[2px] text-[12px]" style={{ color: C.muted }}>
+                              {m.time}
+                            </Text>
+                          </View>
 
-                        {m.kcal ? (
                           <View
                             className="rounded-full px-[10px] py-[4px] justify-center"
                             style={{ backgroundColor: C.canvas }}
@@ -310,17 +315,10 @@ export function DashboardScreen({ go, profile: propProfile }) {
                               {m.kcal} kcal
                             </Text>
                           </View>
-                        ) : (
-                          <View
-                            className="h-[32px] w-[32px] items-center justify-center rounded-full"
-                            style={{ backgroundColor: C.greenTint }}
-                          >
-                            <UtensilsCrossed size={14} color={C.greenDeep} />
-                          </View>
-                        )}
-                      </Pressable>
-                    );
-                  })}
+                        </Pressable>
+                      );
+                    })
+                  )}
                 </View>
               </View>
             </FadeInView>
