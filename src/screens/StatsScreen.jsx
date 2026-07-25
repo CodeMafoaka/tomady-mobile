@@ -3,7 +3,7 @@ import { View, Text, Pressable, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import Svg, { Polyline, Circle } from "react-native-svg";
-import { Sparkles } from "lucide-react-native";
+import { Sparkles, BarChart3 } from "lucide-react-native";
 import { C, FONTS } from "../constant/theme";
 import { TopBar } from "../components/TopBar";
 import { Blob } from "../components/Blob";
@@ -97,7 +97,25 @@ export function StatsScreen() {
           </View>
 
           <View className="mt-[6px] items-center">
-            <WeightChart data={WEIGHT_DATA} />
+            {WEIGHT_DATA.length < 2 ? (
+              /* ---------- État vide ---------- */
+              <View className="items-center justify-center py-[30px]" style={{ gap: 12 }}>
+                <View
+                  className="h-[56px] w-[56px] items-center justify-center rounded-full"
+                  style={{ backgroundColor: C.greenTint }}
+                >
+                  <BarChart3 size={22} color={C.greenDeep} />
+                </View>
+                <Text className="text-center text-[13.5px]" style={{ color: C.muted }}>
+                  Pas encore assez de données pour un graphique
+                </Text>
+                <Text className="text-center text-[11.5px] leading-[17px]" style={{ color: C.muted }}>
+                  Enregistrez votre poids régulièrement pour voir votre évolution.
+                </Text>
+              </View>
+            ) : (
+              <WeightChart data={WEIGHT_DATA} />
+            )}
           </View>
         </View>
 

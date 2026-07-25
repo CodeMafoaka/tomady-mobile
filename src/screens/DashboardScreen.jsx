@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import { View, Text, Pressable, ScrollView, Animated } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
-import { Bell, Beef, Wheat, Droplet, Sparkles, Plus } from "lucide-react-native";
+import { Bell, Beef, Wheat, Droplet, Sparkles, Plus, UtensilsCrossed } from "lucide-react-native";
 import { C, FONTS } from "../constant/theme";
 import { Blob } from "../components/Blob";
 import { GrowthRing } from "../components/GrowthRing";
@@ -73,161 +73,201 @@ export function DashboardScreen({ go }) {
       </View>
 
       <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 14, paddingBottom: 100, gap: 20 }}>
-        {/* goal card animation */}
-        <FadeInView delay={0}>
-        <LinearGradient
-          colors={[C.ink, "#223B2C"]}
-          start={{ x: 0.2, y: 0 }}
-          end={{ x: 0.8, y: 1 }}
-          className="overflow-hidden rounded-[24px] p-[22px]"
-          style={{ position: "relative" }}
-        >
-          <Blob size={140} color="rgba(46,204,113,0.18)" style={{ top: -40, right: -30 }} />
-          <View className="flex-row items-center" style={{ gap: 18, zIndex: 1 }}>
-            <GrowthRing
-              percent={pct}
-              size={110}
-              stroke={10}
-              trackColor="rgba(255,255,255,0.14)"
-              label={
-                <Text className="text-[20px] font-extrabold" style={{ color: C.white }}>
-                  {USER.caloriesConsumed}
-                </Text>
-              }
-              sublabel={<Text className="text-[12px]" style={{ color: "rgba(255,255,255,0.7)" }}>/ {USER.calorieGoal} kcal</Text>}
-            />
-            <View className="flex-1">
-              <Text className="text-[13px] font-bold uppercase tracking-[1px]" style={{ color: "rgba(255,255,255,0.65)" }}>
-                Objectif du jour
-              </Text>
-              <Text
-                style={{ fontFamily: FONTS.display, color: C.white }}
-                className="mt-[6px] text-[17px] font-semibold leading-[22px]"
-              >
-                Encore <Text style={{ color: C.green }}>{remaining} kcal</Text> disponibles
-              </Text>
-              <Text className="mt-[6px] text-[13.5px]" style={{ color: "rgba(255,255,255,0.55)" }}>
-                {USER.goal}
-              </Text>
-            </View>
-          </View>
-        </LinearGradient>
-        </FadeInView>
 
-        {/* macros avec stagger */}
-        <View className="flex-row" style={{ gap: 10 }}>
-          {macros.map((m, idx) => (
-            <FadeInView key={m.label} delay={150 + idx * 100} style={{ flex: 1 }}>
+        {USER.caloriesConsumed === 0 ? (
+          /* ---------- État vide ---------- */
+          <View className="items-center justify-center py-[50px]" style={{ gap: 16 }}>
             <View
-              className="rounded-[18px] border-0 px-3 py-[14px]"
+              className="h-[80px] w-[80px] items-center justify-center rounded-full"
+              style={{ backgroundColor: C.greenTint }}
+            >
+              <UtensilsCrossed size={30} color={C.greenDeep} />
+            </View>
+            <Text className="text-center text-[18px] font-bold" style={{ color: C.ink }}>
+              Aucun repas enregistré aujourd'hui
+            </Text>
+            <Text className="text-center text-[13px] leading-[20px]" style={{ color: C.muted }}>
+              Commencez votre journal alimentaire en ajoutant votre premier repas.
+            </Text>
+            <Pressable
+              onPress={() => go("assistant")}
+              accessibilityLabel="Ajouter mon premier repas"
+              accessibilityRole="button"
+              className="mt-2 items-center rounded-2xl px-[24px] py-[14px] active:opacity-80"
               style={{
-                backgroundColor: C.card,
+                backgroundColor: C.green,
+                shadowColor: C.green,
+                shadowOpacity: 0.4,
+                shadowRadius: 16,
+                shadowOffset: { width: 0, height: 8 },
+                elevation: 4,
+              }}
+            >
+              <Text className="text-[14px] font-bold" style={{ color: C.white }}>
+                Ajouter mon premier repas
+              </Text>
+            </Pressable>
+          </View>
+        ) : (
+          /* ---------- Contenu normal ---------- */
+          <>
+            {/* goal card animation */}
+            <FadeInView delay={0}>
+            <LinearGradient
+              colors={[C.ink, "#223B2C"]}
+              start={{ x: 0.2, y: 0 }}
+              end={{ x: 0.8, y: 1 }}
+              className="overflow-hidden rounded-[24px] p-[22px]"
+              style={{ position: "relative" }}
+            >
+              <Blob size={140} color="rgba(46,204,113,0.18)" style={{ top: -40, right: -30 }} />
+              <View className="flex-row items-center" style={{ gap: 18, zIndex: 1 }}>
+                <GrowthRing
+                  percent={pct}
+                  size={110}
+                  stroke={10}
+                  trackColor="rgba(255,255,255,0.14)"
+                  label={
+                    <Text className="text-[20px] font-extrabold" style={{ color: C.white }}>
+                      {USER.caloriesConsumed}
+                    </Text>
+                  }
+                  sublabel={<Text className="text-[12px]" style={{ color: "rgba(255,255,255,0.7)" }}>/ {USER.calorieGoal} kcal</Text>}
+                />
+                <View className="flex-1">
+                  <Text className="text-[13px] font-bold uppercase tracking-[1px]" style={{ color: "rgba(255,255,255,0.65)" }}>
+                    Objectif du jour
+                  </Text>
+                  <Text
+                    style={{ fontFamily: FONTS.display, color: C.white }}
+                    className="mt-[6px] text-[17px] font-semibold leading-[22px]"
+                  >
+                    Encore <Text style={{ color: C.green }}>{remaining} kcal</Text> disponibles
+                  </Text>
+                  <Text className="mt-[6px] text-[13.5px]" style={{ color: "rgba(255,255,255,0.55)" }}>
+                    {USER.goal}
+                  </Text>
+                </View>
+              </View>
+            </LinearGradient>
+            </FadeInView>
+
+            {/* macros avec stagger */}
+            <View className="flex-row" style={{ gap: 10 }}>
+              {macros.map((m, idx) => (
+                <FadeInView key={m.label} delay={150 + idx * 100} style={{ flex: 1 }}>
+                <View
+                  className="rounded-[18px] border-0 px-3 py-[14px]"
+                  style={{
+                    backgroundColor: C.card,
+                    shadowColor: '#000',
+                    shadowOpacity: 0.04,
+                    shadowRadius: 12,
+                    shadowOffset: { width: 0, height: 4 },
+                    elevation: 2,
+                  }}
+                >
+                  <m.Icon size={16} color={m.color} />
+                  <Text className="mt-2 text-[15px] font-extrabold" style={{ color: C.ink }}>
+                    {m.consumed}
+                    <Text className="text-[13px] font-semibold" style={{ color: C.muted }}>/{m.goal}g</Text>
+                  </Text>
+                  <Text className="mt-[1px] text-[12.5px]" style={{ color: C.muted }}>
+                    {m.label}
+                  </Text>
+                  <View className="mt-2 h-2 overflow-hidden rounded-full" style={{ backgroundColor: C.line }}>
+                    <View
+                      className="h-full"
+                      style={{ width: `${Math.min(100, (m.consumed / m.goal) * 100)}%`, backgroundColor: m.color }}
+                    />
+                  </View>
+                </View>
+                </FadeInView>
+              ))}
+            </View>
+
+            {/* meals timeline */}
+            <FadeInView delay={500}>
+            <View>
+              <View className="mb-[10px] flex-row items-center justify-between">
+                <Text style={{ fontFamily: FONTS.display, color: C.ink }} className="text-[15.5px] font-semibold">
+                  Repas du jour
+                </Text>
+                <Pressable
+                  onPress={() => go("journal")}
+                  accessibilityLabel="Voir tous les repas"
+                  accessibilityRole="button"
+                >
+                  <Text className="text-xs font-bold" style={{ color: C.greenDeep }}>
+                    Voir tout
+                  </Text>
+                </Pressable>
+              </View>
+              <View className="overflow-hidden rounded-[18px] border-0 shadow-sm" style={{ backgroundColor: C.card }}>
+                {MEALS_TODAY.map((m, i) => (
+                  <View
+                    key={i}
+                    className="flex-row items-center px-4 py-[13px]"
+                    style={{
+                      gap: 12,
+                      borderBottomWidth: i < MEALS_TODAY.length - 1 ? 1 : 0,
+                      borderBottomColor: C.line,
+                    }}
+                  >
+                    <View
+                      className="h-2 w-2 rounded-full"
+                      style={{ backgroundColor: m.status === "good" ? C.green : m.status === "warn" ? C.amber : C.line }}
+                    />
+                    <View className="flex-1">
+                      <Text className="text-[13.5px] font-semibold" style={{ color: m.kcal ? C.ink : C.muted }}>
+                        {m.name}
+                      </Text>
+                      <Text className="text-[13px]" style={{ color: C.muted }}>{m.time}</Text>
+                    </View>
+                    {m.kcal ? (
+                      <Text className="text-[12.5px] font-bold" style={{ color: C.inkSoft }}>{m.kcal} kcal</Text>
+                    ) : (
+                      <Plus size={16} color={C.green} />
+                    )}
+                  </View>
+                ))}
+              </View>
+            </View>
+            </FadeInView>
+
+            {/* AI insight */}
+            <FadeInView delay={650}>
+            <View
+              className="flex-row rounded-[20px] border-0 p-[18px]"
+              style={{
+                backgroundColor: C.violetTint,
+                gap: 12,
                 shadowColor: '#000',
                 shadowOpacity: 0.04,
-                shadowRadius: 12,
+                shadowRadius: 16,
                 shadowOffset: { width: 0, height: 4 },
                 elevation: 2,
               }}
             >
-              <m.Icon size={16} color={m.color} />
-              <Text className="mt-2 text-[15px] font-extrabold" style={{ color: C.ink }}>
-                {m.consumed}
-                <Text className="text-[13px] font-semibold" style={{ color: C.muted }}>/{m.goal}g</Text>
-              </Text>
-              <Text className="mt-[1px] text-[12.5px]" style={{ color: C.muted }}>
-                {m.label}
-              </Text>
-              <View className="mt-2 h-2 overflow-hidden rounded-full" style={{ backgroundColor: C.line }}>
-                <View
-                  className="h-full"
-                  style={{ width: `${Math.min(100, (m.consumed / m.goal) * 100)}%`, backgroundColor: m.color }}
-                />
+              <View className="h-9 w-9 items-center justify-center rounded-full" style={{ backgroundColor: C.violet }}>
+                <Sparkles size={16} color={C.white} />
+              </View>
+              <View className="flex-1">
+                <Text className="text-[13px] font-extrabold uppercase tracking-[0.5px]" style={{ color: C.violetDeep }}>
+                  Insight de Tomady
+                </Text>
+                <Text
+                  style={{ fontFamily: FONTS.displayItalic, color: C.inkSoft }}
+                  className="mt-[5px] text-sm leading-[21px]"
+                >
+                  "Vous avez consommé moins de protéines que votre objectif aujourd'hui. Essayez d'ajouter une source de
+                  protéines à votre prochain repas."
+                </Text>
               </View>
             </View>
             </FadeInView>
-          ))}
-        </View>
-
-        {/* meals timeline */}
-        <FadeInView delay={500}>
-        <View>
-          <View className="mb-[10px] flex-row items-center justify-between">
-            <Text style={{ fontFamily: FONTS.display, color: C.ink }} className="text-[15.5px] font-semibold">
-              Repas du jour
-            </Text>
-            <Pressable
-              onPress={() => go("journal")}
-              accessibilityLabel="Voir tous les repas"
-              accessibilityRole="button"
-            >
-              <Text className="text-xs font-bold" style={{ color: C.greenDeep }}>
-                Voir tout
-              </Text>
-            </Pressable>
-          </View>
-          <View className="overflow-hidden rounded-[18px] border-0 shadow-sm" style={{ backgroundColor: C.card }}>
-            {MEALS_TODAY.map((m, i) => (
-              <View
-                key={i}
-                className="flex-row items-center px-4 py-[13px]"
-                style={{
-                  gap: 12,
-                  borderBottomWidth: i < MEALS_TODAY.length - 1 ? 1 : 0,
-                  borderBottomColor: C.line,
-                }}
-              >
-                <View
-                  className="h-2 w-2 rounded-full"
-                  style={{ backgroundColor: m.status === "good" ? C.green : m.status === "warn" ? C.amber : C.line }}
-                />
-                <View className="flex-1">
-                  <Text className="text-[13.5px] font-semibold" style={{ color: m.kcal ? C.ink : C.muted }}>
-                    {m.name}
-                  </Text>
-                  <Text className="text-[13px]" style={{ color: C.muted }}>{m.time}</Text>
-                </View>
-                {m.kcal ? (
-                  <Text className="text-[12.5px] font-bold" style={{ color: C.inkSoft }}>{m.kcal} kcal</Text>
-                ) : (
-                  <Plus size={16} color={C.green} />
-                )}
-              </View>
-            ))}
-          </View>
-        </View>
-        </FadeInView>
-
-        {/* AI insight */}
-        <FadeInView delay={650}>
-        <View
-          className="flex-row rounded-[20px] border-0 p-[18px]"
-          style={{
-            backgroundColor: C.violetTint,
-            gap: 12,
-            shadowColor: '#000',
-            shadowOpacity: 0.04,
-            shadowRadius: 16,
-            shadowOffset: { width: 0, height: 4 },
-            elevation: 2,
-          }}
-        >
-          <View className="h-9 w-9 items-center justify-center rounded-full" style={{ backgroundColor: C.violet }}>
-            <Sparkles size={16} color={C.white} />
-          </View>
-          <View className="flex-1">
-            <Text className="text-[13px] font-extrabold uppercase tracking-[0.5px]" style={{ color: C.violetDeep }}>
-              Insight de Tomady
-            </Text>
-            <Text
-              style={{ fontFamily: FONTS.displayItalic, color: C.inkSoft }}
-              className="mt-[5px] text-sm leading-[21px]"
-            >
-              "Vous avez consommé moins de protéines que votre objectif aujourd'hui. Essayez d'ajouter une source de
-              protéines à votre prochain repas."
-            </Text>
-          </View>
-        </View>
-        </FadeInView>
+          </>
+        )}
 
       </ScrollView>
 

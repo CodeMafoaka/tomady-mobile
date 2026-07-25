@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { View, Text, Pressable, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { ChevronLeft, ChevronRight, Smile, Meh, Frown, Plus } from "lucide-react-native";
+import { ChevronLeft, ChevronRight, Smile, Meh, Frown, Plus, UtensilsCrossed } from "lucide-react-native";
 import { C } from "../constant/theme";
 import { TopBar } from "../components/TopBar";
 import { StatusBadge } from "../components/StatusBadge";
@@ -15,7 +15,8 @@ const FEELINGS = [
 ];
 const MEAL_LABELS = ["Petit-déjeuner", "Déjeuner", "Collation", "Dîner"];
 
-export function JournalScreen({ go }) {
+export function JournalScreen({ go, meals: propMeals }) {
+  const meals = propMeals || MEALS_TODAY;
   const [dayIdx, setDayIdx] = useState(1);
   const [moodSel, setMoodSel] = useState(null);
 
@@ -46,7 +47,44 @@ export function JournalScreen({ go }) {
       </View>
 
       <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 100, gap: 12 }}>
-        {MEALS_TODAY.map((m, i) => (
+        {meals.length === 0 ? (
+          /* ---------- État vide ---------- */
+          <View className="items-center justify-center py-[60px]" style={{ gap: 14 }}>
+            <View
+              className="h-[72px] w-[72px] items-center justify-center rounded-full"
+              style={{ backgroundColor: C.greenTint }}
+            >
+              <UtensilsCrossed size={26} color={C.greenDeep} />
+            </View>
+            <Text className="text-center text-[17px] font-bold" style={{ color: C.ink }}>
+              Aucun repas pour ce jour
+            </Text>
+            <Text className="text-center text-[13px] leading-[20px]" style={{ color: C.muted }}>
+              Ajoutez vos repas depuis l'assistant Tomady pour commencer à suivre votre alimentation.
+            </Text>
+            <Pressable
+              onPress={() => go("assistant")}
+              accessibilityLabel="Ajouter un repas"
+              accessibilityRole="button"
+              className="mt-2 flex-row items-center rounded-2xl px-[20px] py-[13px] active:opacity-80"
+              style={{
+                backgroundColor: C.green,
+                shadowColor: C.green,
+                shadowOpacity: 0.4,
+                shadowRadius: 12,
+                shadowOffset: { width: 0, height: 6 },
+                elevation: 4,
+                gap: 6,
+              }}
+            >
+              <Plus size={16} color={C.white} />
+              <Text className="text-[13px] font-bold" style={{ color: C.white }}>
+                Ajouter un repas
+              </Text>
+            </Pressable>
+          </View>
+        ) : (
+          meals.map((m, i) => (
           <View key={i} className="rounded-[18px] border p-4" style={{ backgroundColor: C.card, borderColor: C.line }}>
             <View className="flex-row items-center justify-between">
               <Text className="text-[11px] font-extrabold uppercase tracking-[0.5px]" style={{ color: C.muted }}>
@@ -109,7 +147,7 @@ export function JournalScreen({ go }) {
               </Pressable>
             )}
           </View>
-        ))}
+        )))}
       </ScrollView>
     </SafeAreaView>
   );
