@@ -24,7 +24,7 @@ export function DashboardScreen({ go }) {
           <Text style={{ fontFamily: FONTS.display, color: C.ink }} className="text-[20px] font-semibold">
             Bonjour, {USER.name} 👋
           </Text>
-          <Text className="mt-[2px] text-[12.5px]" style={{ color: C.muted }}>
+          <Text className="mt-[2px] text-[14.5px]" style={{ color: C.muted }}>
             Voici votre résumé nutritionnel du jour.
           </Text>
         </View>
@@ -62,10 +62,10 @@ export function DashboardScreen({ go }) {
                   {USER.caloriesConsumed}
                 </Text>
               }
-              sublabel={<Text className="text-[10px]" style={{ color: "rgba(255,255,255,0.7)" }}>/ {USER.calorieGoal} kcal</Text>}
+              sublabel={<Text className="text-[12px]" style={{ color: "rgba(255,255,255,0.7)" }}>/ {USER.calorieGoal} kcal</Text>}
             />
             <View className="flex-1">
-              <Text className="text-[11px] font-bold uppercase tracking-[1px]" style={{ color: "rgba(255,255,255,0.65)" }}>
+              <Text className="text-[13px] font-bold uppercase tracking-[1px]" style={{ color: "rgba(255,255,255,0.65)" }}>
                 Objectif du jour
               </Text>
               <Text
@@ -74,7 +74,7 @@ export function DashboardScreen({ go }) {
               >
                 Encore <Text style={{ color: C.green }}>{remaining} kcal</Text> disponibles
               </Text>
-              <Text className="mt-[6px] text-[11.5px]" style={{ color: "rgba(255,255,255,0.55)" }}>
+              <Text className="mt-[6px] text-[13.5px]" style={{ color: "rgba(255,255,255,0.55)" }}>
                 {USER.goal}
               </Text>
             </View>
@@ -86,18 +86,18 @@ export function DashboardScreen({ go }) {
           {macros.map((m) => (
             <View
               key={m.label}
-              className="flex-1 rounded-[18px] border px-3 py-[14px]"
-              style={{ backgroundColor: C.card, borderColor: C.line }}
+              className="flex-1 rounded-[18px] border-0 px-3 py-[14px] shadow-sm"
+              style={{ backgroundColor: C.card }}
             >
               <m.Icon size={16} color={m.color} />
               <Text className="mt-2 text-[15px] font-extrabold" style={{ color: C.ink }}>
                 {m.consumed}
-                <Text className="text-[11px] font-semibold" style={{ color: C.muted }}>/{m.goal}g</Text>
+                <Text className="text-[13px] font-semibold" style={{ color: C.muted }}>/{m.goal}g</Text>
               </Text>
-              <Text className="mt-[1px] text-[10.5px]" style={{ color: C.muted }}>
+              <Text className="mt-[1px] text-[12.5px]" style={{ color: C.muted }}>
                 {m.label}
               </Text>
-              <View className="mt-2 h-1 overflow-hidden rounded-full" style={{ backgroundColor: C.line }}>
+              <View className="mt-2 h-2 overflow-hidden rounded-full" style={{ backgroundColor: C.line }}>
                 <View
                   className="h-full"
                   style={{ width: `${Math.min(100, (m.consumed / m.goal) * 100)}%`, backgroundColor: m.color }}
@@ -119,7 +119,7 @@ export function DashboardScreen({ go }) {
               </Text>
             </Pressable>
           </View>
-          <View className="overflow-hidden rounded-[18px] border" style={{ backgroundColor: C.card, borderColor: C.line }}>
+          <View className="overflow-hidden rounded-[18px] border-0 shadow-sm" style={{ backgroundColor: C.card }}>
             {MEALS_TODAY.map((m, i) => (
               <View
                 key={i}
@@ -138,7 +138,7 @@ export function DashboardScreen({ go }) {
                   <Text className="text-[13.5px] font-semibold" style={{ color: m.kcal ? C.ink : C.muted }}>
                     {m.name}
                   </Text>
-                  <Text className="text-[11px]" style={{ color: C.muted }}>{m.time}</Text>
+                  <Text className="text-[13px]" style={{ color: C.muted }}>{m.time}</Text>
                 </View>
                 {m.kcal ? (
                   <Text className="text-[12.5px] font-bold" style={{ color: C.inkSoft }}>{m.kcal} kcal</Text>
@@ -152,14 +152,14 @@ export function DashboardScreen({ go }) {
 
         {/* AI insight */}
         <View
-          className="flex-row rounded-[20px] border p-[18px]"
-          style={{ backgroundColor: C.greenTint, borderColor: C.greenLine, gap: 12 }}
+          className="flex-row rounded-[20px] border-0 p-[18px] shadow-sm"
+          style={{ backgroundColor: C.greenTint, gap: 12 }}
         >
           <View className="h-9 w-9 items-center justify-center rounded-full" style={{ backgroundColor: C.green }}>
             <Sparkles size={16} color={C.white} />
           </View>
           <View className="flex-1">
-            <Text className="text-[11px] font-extrabold uppercase tracking-[0.5px]" style={{ color: C.greenDeep }}>
+            <Text className="text-[13px] font-extrabold uppercase tracking-[0.5px]" style={{ color: C.greenDeep }}>
               Insight de Gemmify
             </Text>
             <Text
@@ -172,18 +172,16 @@ export function DashboardScreen({ go }) {
           </View>
         </View>
 
-        {/* quick actions */}
-        <Pressable
-          onPress={() => go("assistant")}
-          className="flex-row items-center justify-center rounded-2xl py-[15px]"
-          style={{ backgroundColor: C.ink, gap: 8 }}
-        >
-          <Plus size={16} color={C.white} />
-          <Text className="text-sm font-bold" style={{ color: C.white }}>
-            Ajouter un repas
-          </Text>
-        </Pressable>
       </ScrollView>
+
+      {/* FAB - Ajouter un repas */}
+      <Pressable
+        onPress={() => go("assistant")}
+        className="absolute bottom-6 right-5 h-[60px] w-[60px] items-center justify-center rounded-full shadow-md active:opacity-80"
+        style={{ backgroundColor: C.ink, elevation: 4 }}
+      >
+        <Plus size={24} color={C.white} />
+      </Pressable>
     </SafeAreaView>
   );
 }
