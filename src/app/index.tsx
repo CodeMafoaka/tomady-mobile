@@ -1,6 +1,7 @@
-import { useState } from "react";
-import { View } from "react-native";
-import { SafeAreaProvider } from "react-native-safe-area-context";
+import { useState, useEffect } from "react";
+import { View, Text, TextInput, Pressable } from "react-native";
+import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
+import { Lock } from "lucide-react-native";
 import { StatusBar } from "expo-status-bar";
 import {
   useFonts,
@@ -48,6 +49,43 @@ export default function App() {
   const [food, setFood] = useState(FOODS[0]);
   const [meals, setMeals] = useState(MEALS_TODAY);
 
+  // PIN Security State
+  const [isAppLocked, setIsAppLocked] = useState(true);
+  const [pin, setPin] = useState("");
+  const [attempts, setAttempts] = useState(0);
+  const [lockoutTime, setLockoutTime] = useState<number | null>(null);
+  const [timeLeft, setTimeLeft] = useState(0);
+
+  useEffect(() => {
+    let interval;
+    if (lockoutTime) {
+      interval = setInterval(() => {
+        const now = Date.now();
+        if (now >= lockoutTime) {
+          setLockoutTime(null);
+          setAttempts(0);
+          setTimeLeft(0);
+        } else {
+          setTimeLeft(Math.ceil((lockoutTime - now) / 1000));
+        }
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [lockoutTime]);
+
+  const handlePinSubmit = () => {
+    if (lockoutTime) return;
+    if (pin === "323232") {
+      setIsAppLocked(false);
+    } else {
+      const newAttempts = attempts + 1;
+      setAttempts(newAttempts);
+      if (newAttempts >= 3) {
+        setLockoutTime(Date.now() + 15 * 60 * 1000); // 15 minutes
+      }
+    }
+  };
+
   if (!fontsLoaded) return null;
 
   const go = (id) => {
@@ -93,6 +131,69 @@ export default function App() {
   };
 
   const showNav = MAIN_TABS.has(screen);
+
+  if (isAppLocked) {
+    const minutes = Math.floor(timeLeft / 60);
+    const seconds = timeLeft % 60;
+    const timeString = `${minutes}:${seconds < 10 ? "0" : ""}${seconds}`;
+
+    return (
+      <SafeAreaProvider>
+        <SafeAreaView className="flex-1 items-center justify-center px-8" style={{ backgroundColor: C.canvas }}>
+          <StatusBar style="dark" />
+          <View className="mb-6 h-[80px] w-[80px] items-center justify-center rounded-full" style={{ backgroundColor: C.greenTint }}>
+            <Lock size={32} color={C.greenDeep} />
+          </View>
+          <Text style={{ fontFamily: "Fraunces_600SemiBold", color: C.ink }} className="mb-2 text-center text-[24px]">
+            Accès Sécurisé
+          </Text>
+          <Text className="mb-8 text-center text-[14px]" style={{ color: C.muted }}>
+            Veuillez entrer le code PIN pour accéder à l'application.
+          </Text>
+
+          <TextInput
+            value={pin}
+            onChangeText={setPin}
+            placeholder="Entrez le code PIN"
+            keyboardType="number-pad"
+            secureTextEntry
+            editable={!lockoutTime}
+            className="mb-4 w-full rounded-2xl border px-5 py-4 text-center text-[18px] tracking-[4px]"
+            style={{
+              backgroundColor: C.white,
+              borderColor: attempts >= 3 ? C.coral : C.line,
+              color: C.ink,
+            }}
+          />
+
+          {attempts > 0 && attempts < 3 && (
+            <Text className="mb-4 text-center text-[13px] font-bold" style={{ color: C.coral }}>
+              Code incorrect. {3 - attempts} tentative(s) restante(s).
+            </Text>
+          )}
+
+          {lockoutTime && (
+            <Text className="mb-4 text-center text-[13px] font-bold" style={{ color: C.coral }}>
+              Trop de tentatives. Veuillez réessayer dans {timeString}.
+            </Text>
+          )}
+
+          <Pressable
+            onPress={handlePinSubmit}
+            disabled={!!lockoutTime || pin.length === 0}
+            className="w-full items-center rounded-[16px] py-[16px] active:opacity-80"
+            style={{
+              backgroundColor: lockoutTime || pin.length === 0 ? C.muted : C.green,
+            }}
+          >
+            <Text className="text-[15px] font-bold" style={{ color: C.white }}>
+              Déverrouiller
+            </Text>
+          </Pressable>
+        </SafeAreaView>
+      </SafeAreaProvider>
+    );
+  }
 
   return (
     <SafeAreaProvider>
