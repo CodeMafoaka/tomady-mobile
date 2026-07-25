@@ -1,12 +1,13 @@
-import React from "react";
-import { StyleProp, StyleSheet, View, ViewStyle, Pressable, Text } from "react-native";
+import React, { useEffect } from "react";
+import { StyleProp, StyleSheet, View, ViewStyle, Pressable } from "react-native";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withTiming,
   withSpring,
-  withSequence,
+  withRepeat,
   Easing,
+  cancelAnimation,
 } from "react-native-reanimated";
 import { AIOrb } from "./AIOrb";
 
@@ -19,9 +20,8 @@ interface AIAssistantButtonProps {
 }
 
 const DEFAULT_SIZE = 42;
-// Halo plus contenu : juste un peu plus grand que le disque, pas un halo géant.
 const ORB_SCALE = 1.4;
-const BORDER_WIDTH = 0.1;
+const BORDER_WIDTH = 0.5;
 
 export const AIAssistantButton: React.FC<AIAssistantButtonProps> = ({
   onPress,
@@ -30,30 +30,62 @@ export const AIAssistantButton: React.FC<AIAssistantButtonProps> = ({
   size = DEFAULT_SIZE,
   style,
 }) => {
+  // Shared values pour la physique de pression et d'animation
   const scale = useSharedValue(1);
-  const press = useSharedValue(0);
+  const pulseScale = useSharedValue(1);
+  const pulseOpacity = useSharedValue(0.4);
 
+  // Configuration exacte du feedback tactile (style Pinterest Lens/Visual Search)
   const handlePressIn = () => {
-    press.value = withTiming(1, { duration: 90, easing: Easing.out(Easing.quad) });
+    scale.value = withTiming(0.92, {
+      duration: 100,
+      easing: Easing.out(Easing.quad),
+    });
   };
 
   const handlePressOut = () => {
-    press.value = withSpring(0, { stiffness: 260, damping: 14 });
-    scale.value = withSequence(
-      withTiming(1.05, { duration: 120, easing: Easing.out(Easing.quad) }),
-      withSpring(1, { stiffness: 300, damping: 15 }),
-    );
+    scale.value = withSpring(1, {
+      stiffness: 300,
+      damping: 18,
+      mass: 0.8,
+    });
   };
 
-  const buttonScaleStyle = useAnimatedStyle(() => {
-    const squish = 1 - press.value * 0.08;
-    return { transform: [{ scale: scale.value * squish }] };
+  // Animation de respiration/pulsation active (détection visuelle)
+  useEffect(() => {
+    if (isListening || isActive) {
+      pulseScale.value = withRepeat(
+        withTiming(1.08, { duration: 1200, easing: Easing.inOut(Easing.ease) }),
+        -1,
+        true
+      );
+      pulseOpacity.value = withRepeat(
+        withTiming(0.85, { duration: 1200, easing: Easing.inOut(Easing.ease) }),
+        -1,
+        true
+      );
+    } else {
+      cancelAnimation(pulseScale);
+      cancelAnimation(pulseOpacity);
+      pulseScale.value = withTiming(1, { duration: 250 });
+      pulseOpacity.value = withTiming(0.4, { duration: 250 });
+    }
+  }, [isListening, isActive]);
+
+  const animatedButtonStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ scale: scale.value }],
+    };
+  });
+
+  const animatedPulseStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ scale: pulseScale.value }],
+      opacity: pulseOpacity.value,
+    };
   });
 
   const speed = isListening ? "listening" : isActive ? "active" : "idle";
-  // L'orbe lui-même est généré un peu plus grand que le cadre visible,
-  // puis coupé net par overflow:hidden + bordure ci-dessous, pour un
-  // rendu compact et bien défini plutôt qu'un halo qui déborde partout.
   const containerSize = size * ORB_SCALE;
   const orbSize = containerSize * 0.9;
 
@@ -63,23 +95,34 @@ export const AIAssistantButton: React.FC<AIAssistantButtonProps> = ({
         onPress={onPress}
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
-        accessibilityLabel="Assistant IA"
+        accessibilityLabel="Assistant IA - Recherche Visuelle"
         accessibilityRole="button"
         style={[styles.pressableArea, { width: containerSize, height: containerSize }]}
       >
         <Animated.View
           style={[
             styles.frame,
-            buttonScaleStyle,
+            animatedButtonStyle,
             {
               width: containerSize,
               height: containerSize,
               borderRadius: containerSize / 2,
-              borderWidth: BORDER_WIDTH
             },
           ]}
         >
-          {/* Vrai orbe flouté, centré et rogné au cadre par overflow:hidden */}
+          {/* Couche d'onde/glow pulsante */}
+          <Animated.View
+            style={[
+              StyleSheet.absoluteFill,
+              animatedPulseStyle,
+              {
+                borderRadius: containerSize / 2,
+                backgroundColor: "rgba(255, 255, 255, 0.15)",
+              },
+            ]}
+          />
+
+          {/* Orbe visuel principal */}
           <View
             style={{
               position: "absolute",
@@ -92,7 +135,7 @@ export const AIAssistantButton: React.FC<AIAssistantButtonProps> = ({
             <AIOrb size={orbSize} speed={speed} />
           </View>
 
-          {/* Cœur sombre au centre, pour garder un disque net cliquable */}
+          {/* Cœur/Bordure de finition */}
           <View
             style={[
               styles.core,
@@ -113,7 +156,6 @@ const styles = StyleSheet.create({
   wrapper: {
     alignItems: "center",
     justifyContent: "center",
-    gap: 4,
   },
   pressableArea: {
     alignItems: "center",
@@ -123,16 +165,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     overflow: "hidden",
-    backgroundColor: "#ac0479ff",
+    backgroundColor: "#e60023", // Rouge signature Pinterest (ou adaptez à votre thème)
+    borderWidth: BORDER_WIDTH,
+    borderColor: "rgba(255, 255, 255, 0.2)",
   },
   core: {
     position: "absolute",
     backgroundColor: "transparent",
-    borderColor: "rgba(255, 255, 255, 0.08)",
-  },
-  label: {
-    fontSize: 10,
-    fontWeight: "700",
+    borderColor: "rgba(255, 255, 255, 0.25)",
   },
 });
 

@@ -20,19 +20,6 @@ import {
   SharedValue,
 } from "react-native-reanimated";
 
-/**
- * AIOrb — reproduit l'effet de l'image de référence :
- * plusieurs masses de couleur (corail, violet, teal, rouge)
- * qui orbitent lentement les unes autour des autres, floutées
- * ensemble (vrai flou gaussien via Skia) et mélangées en mode
- * additif ("plus") pour obtenir ce halo organique et lumineux
- * autour d'un centre sombre.
- *
- * Nécessite :
- *   npx expo install @shopify/react-native-skia
- *   (react-native-reanimated déjà présent dans le projet)
- */
-
 type Speed = "idle" | "active" | "listening";
 
 interface AIOrbProps {
@@ -43,28 +30,29 @@ interface AIOrbProps {
 
 interface BlobConfig {
   color: string;
-  radiusRatio: number; // rayon du blob / size
-  orbitRatio: number; // rayon de l'orbite / size
-  phase: number; // décalage angulaire de départ (radians)
-  freq: number; // vitesse relative de rotation du blob
+  radiusRatio: number;
+  orbitRatio: number;
+  phase: number;
+  freq: number;
+  scaleAmplitude: number; // Amplitude de pulsation propre au blob
 }
 
-// Palette calquée sur la référence : corail chaud, violet, cyan/teal, rouge profond
+// Palette inspirée de la recherche visuelle Pinterest : rouges, roses chauds, magentas et orange vibrant
 const BLOBS: BlobConfig[] = [
-  { color: "#ff6a4d", radiusRatio: 0.3, orbitRatio: 0.34, phase: 0.0, freq: 1.0 },
-  { color: "#b34ce0", radiusRatio: 0.34, orbitRatio: 0.3, phase: 2.1, freq: 0.86 },
-  { color: "#23c6e0", radiusRatio: 0.32, orbitRatio: 0.32, phase: 4.2, freq: 1.14 },
-  { color: "#e0335c", radiusRatio: 0.26, orbitRatio: 0.37, phase: 3.15, freq: 0.7 },
+  { color: "#ff2a5f", radiusRatio: 0.32, orbitRatio: 0.28, phase: 0.0, freq: 1.0, scaleAmplitude: 0.08 },
+  { color: "#ff6b00", radiusRatio: 0.28, orbitRatio: 0.24, phase: 2.1, freq: 1.2, scaleAmplitude: 0.12 },
+  { color: "#e0004d", radiusRatio: 0.35, orbitRatio: 0.22, phase: 4.2, freq: 0.85, scaleAmplitude: 0.06 },
+  { color: "#ff94b8", radiusRatio: 0.25, orbitRatio: 0.30, phase: 3.15, freq: 1.4, scaleAmplitude: 0.10 },
 ];
 
-/* Un blob individuel : sa propre dérivation de position pour respecter
-   les règles des hooks (chaque instance a son hook top-level, pas dans une boucle). */
+/* Un blob individuel avec trajectoire elliptique et respiration (scale) */
 const Blob: React.FC<{
   t: SharedValue<number>;
+  pulse: SharedValue<number>;
   config: BlobConfig;
   size: number;
   canvasCenter: number;
-}> = ({ t, config, size, canvasCenter }) => {
+}> = ({ t, pulse, config, size, canvasCenter }) => {
   const cx = useDerivedValue(() => {
     "worklet";
     const angle = t.value * Math.PI * 2 * config.freq + config.phase;
@@ -74,27 +62,58 @@ const Blob: React.FC<{
   const cy = useDerivedValue(() => {
     "worklet";
     const angle = t.value * Math.PI * 2 * config.freq + config.phase;
-    return canvasCenter + Math.sin(angle) * size * config.orbitRatio * 0.92; // légère ellipse
+    return canvasCenter + Math.sin(angle) * size * config.orbitRatio * 0.88; // Ellipse légèrement accentuée
   });
 
-  return <Circle cx={cx} cy={cy} r={size * config.radiusRatio} color={config.color} blendMode="plus" />;
+  // Animation de rayon dynamique (effet de déformation organique)
+  const r = useDerivedValue(() => {
+    "worklet";
+    const baseRadius = size * config.radiusRatio;
+    const pulseFactor = Math.sin(pulse.value * Math.PI * 2 * config.freq) * config.scaleAmplitude;
+    return baseRadius * (1 + pulseFactor);
+  });
+
+  return (
+    <Circle
+      cx={cx}
+      cy={cy}
+      r={r}
+      color={config.color}
+      blendMode="plus"
+    />
+  );
 };
 
 export const AIOrb: React.FC<AIOrbProps> = ({ size = 140, speed = "idle", style }) => {
   const t = useSharedValue(0);
+  const pulse = useSharedValue(0);
 
   useEffect(() => {
-    const duration = speed === "listening" ? 5200 : speed === "active" ? 8000 : 13000;
-    t.value = 0;
-    t.value = withRepeat(withTiming(1, { duration, easing: Easing.linear }), -1, false);
-    return () => cancelAnimation(t);
+    // Vitesses ajustées : plus réactives lors de l'écoute ou du scan
+    const duration = speed === "listening" ? 3500 : speed === "active" ? 5500 : 9000;
+    const pulseDuration = speed === "listening" ? 1800 : speed === "active" ? 2800 : 4500;
+
+    t.value = withRepeat(
+      withTiming(1, { duration, easing: Easing.linear }),
+      -1,
+      false
+    );
+
+    pulse.value = withRepeat(
+      withTiming(1, { duration: pulseDuration, easing: Easing.inOut(Easing.quad) }),
+      -1,
+      true
+    );
+
+    return () => {
+      cancelAnimation(t);
+      cancelAnimation(pulse);
+    };
   }, [speed]);
 
-  // Canvas plus grand que le halo visible : le flou peut "déborder"
-  // et s'estomper en douceur au lieu d'être coupé net.
-  const canvasSize = size * 1.7;
+  const canvasSize = size * 1.6;
   const canvasCenter = canvasSize / 2;
-  const maskRadius = size * 0.62;
+  const maskRadius = size * 0.58;
 
   return (
     <View
@@ -111,15 +130,23 @@ export const AIOrb: React.FC<AIOrbProps> = ({ size = 140, speed = "idle", style 
               <RadialGradient
                 c={vec(canvasCenter, canvasCenter)}
                 r={maskRadius}
-                colors={["white", "white", "rgba(255,255,255,0)"]}
-                positions={[0, 0.68, 1]}
+                colors={["rgba(255,255,255,1)", "rgba(255,255,255,0.9)", "rgba(255,255,255,0)"]}
+                positions={[0, 0.7, 1]}
               />
             </Circle>
           }
         >
-          <Group layer={<Paint><Blur blur={size * 0.16} /></Paint>}>
+          {/* Flou gaussien équilibré pour garder de la netteté au centre */}
+          <Group layer={<Paint><Blur blur={size * 0.12} /></Paint>}>
             {BLOBS.map((config, i) => (
-              <Blob key={i} t={t} config={config} size={size} canvasCenter={canvasCenter} />
+              <Blob
+                key={i}
+                t={t}
+                pulse={pulse}
+                config={config}
+                size={size}
+                canvasCenter={canvasCenter}
+              />
             ))}
           </Group>
         </Mask>
