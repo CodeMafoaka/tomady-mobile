@@ -346,10 +346,11 @@ export function CatalogueScreen({ go, openFood, profile: propProfile }) {
       </View>
 
       {/* Catégories */}
+      <View className="h-[36px] justify-center mb-2">
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 14, gap: 8 }}
+        contentContainerStyle={{ paddingHorizontal: 20, gap: 6 }}
       >
         {CATEGORIES.map((c) => {
           const active = cat === c;
@@ -370,6 +371,7 @@ export function CatalogueScreen({ go, openFood, profile: propProfile }) {
           );
         })}
       </ScrollView>
+      </View>
 
       {/* Résultats */}
       <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 100, gap: 12 }}>
