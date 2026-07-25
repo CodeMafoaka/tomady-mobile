@@ -225,7 +225,17 @@ export default function App() {
           />
         );
       case "dashboard": return <DashboardScreen go={go} profile={profile} meals={meals} />;
-      case "journal": return <JournalScreen go={go} />;
+      case "journal": return (
+        <JournalScreen
+          go={go}
+          onMealDeleted={async () => {
+            const todayMeals = await getTodayMeals();
+            setMeals(todayMeals);
+            applyDailyTotals(todayMeals);
+            showToast("Repas supprimé");
+          }}
+        />
+      );
       case "catalogue": return <CatalogueScreen go={go} openFood={openFood} profile={profile} />;
       case "detail": return <FoodDetailScreen food={food} go={go} profile={profile} />;
       case "stats": return <StatsScreen profile={profile} />;

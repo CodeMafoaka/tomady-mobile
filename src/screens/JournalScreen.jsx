@@ -1,11 +1,11 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { View, Text, Pressable, ScrollView, ActivityIndicator } from "react-native";
+import { View, Text, Pressable, ScrollView, ActivityIndicator, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { ChevronLeft, ChevronRight, Smile, Meh, Frown, Plus, UtensilsCrossed } from "lucide-react-native";
+import { ChevronLeft, ChevronRight, Smile, Meh, Frown, Plus, Trash2, UtensilsCrossed } from "lucide-react-native";
 import { C } from "../constant/theme";
 import { TopBar } from "../components/TopBar";
 import { StatusBadge } from "../components/StatusBadge";
-import { getMealsForDate, updateMealFeeling } from "../services/database";
+import { getMealsForDate, updateMealFeeling, deleteMealEntry } from "../services/database";
 
 const DAYS = ["Hier", "Aujourd'hui", "Demain"];
 const FEELINGS = [
@@ -25,7 +25,7 @@ function getDateStr(dayIdx) {
   return d.toISOString().split("T")[0];
 }
 
-export function JournalScreen({ go }) {
+export function JournalScreen({ go, onMealDeleted }) {
   const [dayIdx, setDayIdx] = useState(1);
   const [dayMeals, setDayMeals] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -57,6 +57,26 @@ export function JournalScreen({ go }) {
     if (newIdx === dayIdx) return;
     setDayIdx(newIdx);
     loadMealsForDay(newIdx);
+  };
+
+  // Supprimer un repas
+  const handleDelete = (meal) => {
+    Alert.alert(
+      "Supprimer ce repas",
+      `Êtes-vous sûr de vouloir supprimer « ${meal.name} » ?\n\nCette action est irréversible.`,
+      [
+        { text: "Annuler", style: "cancel" },
+        {
+          text: "Supprimer",
+          style: "destructive",
+          onPress: async () => {
+            await deleteMealEntry(meal.id);
+            await loadMealsForDay(dayIdx);
+            onMealDeleted?.();
+          },
+        },
+      ],
+    );
   };
 
   // Sauvegarder le ressenti dans SQLite
@@ -163,7 +183,7 @@ export function JournalScreen({ go }) {
                 className="rounded-[18px] border p-4"
                 style={{ backgroundColor: C.card, borderColor: C.line }}
               >
-                {/* En-tête : label + heure */}
+                {/* En-tête : label + heure + supprimer */}
                 <View className="flex-row items-center justify-between">
                   <Text
                     className="text-[11px] font-extrabold uppercase tracking-[0.5px]"
@@ -171,9 +191,20 @@ export function JournalScreen({ go }) {
                   >
                     {label || "Repas"}
                   </Text>
-                  <Text className="text-[11.5px]" style={{ color: C.muted }}>
-                    {m.time}
-                  </Text>
+                  <View className="flex-row items-center" style={{ gap: 8 }}>
+                    <Text className="text-[11.5px]" style={{ color: C.muted }}>
+                      {m.time}
+                    </Text>
+                    <Pressable
+                      onPress={() => handleDelete(m)}
+                      accessibilityLabel={`Supprimer ${m.name}`}
+                      accessibilityRole="button"
+                      className="h-[28px] w-[28px] items-center justify-center rounded-full active:opacity-60"
+                      style={{ backgroundColor: C.canvas }}
+                    >
+                      <Trash2 size={13} color={C.coral} />
+                    </Pressable>
+                  </View>
                 </View>
 
                 <Text className="mt-[6px] text-[14.5px] font-bold" style={{ color: C.ink }}>

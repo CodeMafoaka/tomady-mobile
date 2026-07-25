@@ -261,6 +261,17 @@ export async function addMealEntry(meal) {
 /**
  * Met à jour le ressenti (feeling) d'un repas.
  */
+/**
+ * Supprime un repas par son id.
+ */
+export async function deleteMealEntry(id) {
+  const db = await getDb();
+  await db.runAsync("DELETE FROM meal_entries WHERE id = ?", [id]);
+}
+
+/**
+ * Met à jour le ressenti (feeling) d'un repas.
+ */
 export async function updateMealFeeling(id, feeling) {
   const db = await getDb();
   await db.runAsync("UPDATE meal_entries SET feeling = ? WHERE id = ?", [
