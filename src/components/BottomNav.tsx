@@ -1,5 +1,6 @@
 import { View, Text, Pressable } from "react-native";
 import { Home, BookOpen, Compass, User } from "lucide-react-native";
+import Animated, { ZoomIn, ZoomOut } from "react-native-reanimated";
 import { C } from "@/constant/theme";
 import { AIAssistantButton } from "./AIAssistantButton";
 
@@ -33,7 +34,9 @@ export function BottomNav({ active, go }) {
             {/* Assistant button ancré au-dessus du bouton Profil */}
             {/* Cacher le bouton assistant quand on est sur la page assistant */}
             {isProfile && active !== "assistant" && (
-              <View
+              <Animated.View
+                entering={ZoomIn.springify().damping(14).stiffness(200).mass(0.8)}
+                exiting={ZoomOut.duration(180)}
                 style={{
                   position: "absolute",
                   bottom: 76,
@@ -45,7 +48,7 @@ export function BottomNav({ active, go }) {
                 <AIAssistantButton
                   onPress={() => go("assistant")}
                 />
-              </View>
+              </Animated.View>
             )}
             <Icon size={20} color={isActive ? C.green : C.muted} strokeWidth={isActive ? 2.4 : 2} />
             <Text
