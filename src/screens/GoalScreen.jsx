@@ -12,7 +12,7 @@ const GOALS = [
   { t: "Améliorer ma condition physique", d: "Nutrition alignée avec vos entraînements.", icon: Sparkles },
 ];
 
-export function GoalScreen({ go }) {
+export function GoalScreen({ go, onNext }) {
   const [sel, setSel] = useState("Perte de poids");
 
   return (
@@ -98,7 +98,10 @@ export function GoalScreen({ go }) {
 
       <View className="px-5 pb-[30px]">          
         <Pressable
-            onPress={() => go("dashboard")}
+            onPress={() => {
+              onNext?.({ goal: sel });
+              go("dashboard");
+            }}
             accessibilityLabel="Continuer"
             accessibilityRole="button"
             className="w-full items-center rounded-2xl py-[15px] active:opacity-80"

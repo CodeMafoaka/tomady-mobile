@@ -140,7 +140,13 @@ export default function App() {
             onNext={(data) => updateProfile({ ...profile, ...data })}
           />
         );
-      case "goal": return <GoalScreen go={go} />;
+      case "goal":
+        return (
+          <GoalScreen
+            go={go}
+            onNext={(data) => updateProfile({ ...profile, ...data })}
+          />
+        );
       case "dashboard": return <DashboardScreen go={go} profile={profile} />;
       case "journal": return <JournalScreen go={go} meals={meals} />;
       case "catalogue": return <CatalogueScreen go={go} openFood={openFood} profile={profile} />;
