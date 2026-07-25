@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "BGemma",
-    "slug": "BGemma",
+    "name": "Tomady",
+    "slug": "tomady",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "bgemma",
+    "scheme": "tomady",
     "userInterfaceStyle": "automatic",
     "ios": {
       "icon": "./assets/expo.icon"
