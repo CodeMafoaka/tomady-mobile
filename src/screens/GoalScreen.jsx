@@ -22,24 +22,24 @@ export function GoalScreen({ go, onNext }) {
       <View className="px-5 pb-1">
         {/* Step progress indicator */}
         <View className="flex-row items-center" style={{ gap: 8 }}>
-          {[1, 2, 3, 4, 5].map((step) => (
+          {[1, 2, 3].map((step) => (
             <View key={step} className="flex-1 flex-row items-center">
               <View
                 className="h-2 flex-1 rounded-full"
                 style={{
-                  backgroundColor: step <= 3 ? C.green : C.line,
-                  opacity: step <= 3 ? 1 : 0.5,
+                  backgroundColor: C.green,
+                  opacity: 1,
                 }}
               />
             </View>
           ))}
         </View>
         <View className="mt-[6px] flex-row justify-between">
-          {["Bienvenue", "Infos", "Objectif", "Profil", "Prêt"].map((label, i) => (
+          {["Bienvenue", "Infos", "Objectif"].map((label, i) => (
             <Text
               key={label}
               className="text-[10.5px] font-semibold"
-              style={{ color: i <= 2 ? C.greenDeep : C.muted, opacity: i <= 2 ? 1 : 0.5 }}
+              style={{ color: C.greenDeep, opacity: 1 }}
             >
               {label}
             </Text>

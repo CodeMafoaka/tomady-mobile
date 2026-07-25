@@ -18,8 +18,8 @@ const REGIONS = [
   "Mahajanga", "Toliara", "Autre",
 ];
 
-const STEP = { current: 2, total: 5 };
-const STEP_LABELS = ["Bienvenue", "Infos", "Objectif", "Profil", "Prêt"];
+const STEP = { current: 2, total: 3 };
+const STEP_LABELS = ["Bienvenue", "Infos", "Objectif"];
 
 /* ==============================================================
    Écran : Informations personnelles (onboarding)
