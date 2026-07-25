@@ -165,7 +165,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     overflow: "hidden",
-    backgroundColor: "#e60023", // Rouge signature Pinterest (ou adaptez à votre thème)
+    backgroundColor: "#2ECC71", // Vert signature de l'application
     borderWidth: BORDER_WIDTH,
     borderColor: "rgba(255, 255, 255, 0.2)",
   },

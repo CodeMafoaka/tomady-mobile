@@ -31,7 +31,8 @@ export function BottomNav({ active, go }) {
             style={{ gap: 5 }}
           >
             {/* Assistant button ancré au-dessus du bouton Profil */}
-            {isProfile && (
+            {/* Cacher le bouton assistant quand on est sur la page assistant */}
+            {isProfile && active !== "assistant" && (
               <View
                 style={{
                   position: "absolute",
