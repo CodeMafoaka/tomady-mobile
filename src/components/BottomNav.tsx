@@ -35,7 +35,7 @@ export function BottomNav({ active, go }) {
               <View
                 style={{
                   position: "absolute",
-                  bottom: 56,
+                  bottom: 76,
                   left: 26,
                   zIndex: 10,
                 }}
