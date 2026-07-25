@@ -20,13 +20,16 @@ export const C = {
   coralDeep: "#B23324",
   coralDeep2: "#8C2A1E",
   ink: "#16241C",
-  inkSoft: "#3B4A41",
-  muted: "#6F7F76",
+  inkSoft: "#2D3C34",
+  muted: "#4F5F56",
   line: "#E7EDE9",
   white: "#FFFFFF",
-  canvas: "#F3F7F4",
-  card: "#FBFDFC",
+  canvas: "#F0F5F2",
+  card: "#F8FAF9",
   blue: "#5FA8E0",
+  violet: "#8B5CF6",
+  violetTint: "#F0EDFF",
+  violetDeep: "#6D3ADE",
 };
 
 // Familles de police — à charger via expo-google-fonts (voir README.md)

@@ -76,14 +76,25 @@ export function FoodDetailScreen({ food, go }) {
       <View className="flex-row px-5 pb-[30px]" style={{ gap: 10 }}>
         <Pressable
           onPress={() => go("journal")}
-          className="flex-1 items-center rounded-2xl py-[15px]"
-          style={{ backgroundColor: C.green }}
+          accessibilityLabel="Ajouter au journal"
+          accessibilityRole="button"
+          className="flex-1 items-center rounded-2xl py-[15px] active:opacity-80"
+          style={{
+            backgroundColor: C.green,
+            shadowColor: C.green,
+            shadowOpacity: 0.3,
+            shadowRadius: 12,
+            shadowOffset: { width: 0, height: 4 },
+            elevation: 3,
+          }}
         >
           <Text className="text-[13.5px] font-bold" style={{ color: C.white }}>Ajouter au journal</Text>
         </Pressable>
         <Pressable
           onPress={() => go("assistant")}
-          className="flex-1 items-center rounded-2xl border py-[15px]"
+          accessibilityLabel="Demander à l'assistant IA"
+          accessibilityRole="button"
+          className="flex-1 items-center rounded-2xl border py-[15px] active:opacity-70"
           style={{ backgroundColor: C.canvas, borderColor: C.line }}
         >
           <Text className="text-[13.5px] font-bold" style={{ color: C.ink }}>Demander à l'IA</Text>

@@ -45,7 +45,9 @@ export function WelcomeScreen({ go }) {
       <View className="px-6 pb-[34px]" style={{ zIndex: 1 }}>
         <Pressable
           onPress={() => go("goal")}
-          className="w-full items-center rounded-[18px] py-4"
+          accessibilityLabel="Commencer l'expérience Gemmify"
+          accessibilityRole="button"
+          className="w-full items-center rounded-[18px] py-4 active:opacity-80"
           style={{
             backgroundColor: C.green,
             shadowColor: C.green,

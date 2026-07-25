@@ -9,14 +9,15 @@ import { MEALS_TODAY } from "../data/mockData";
 
 const DAYS = ["Hier", "Aujourd'hui", "Demain"];
 const FEELINGS = [
-  { Icon: Smile, label: "Énergique" },
-  { Icon: Meh, label: "Normal" },
-  { Icon: Frown, label: "Fatigué" },
+  { id: "energique", Icon: Smile, label: "Énergique", color: C.green },
+  { id: "normal", Icon: Meh, label: "Normal", color: C.amber },
+  { id: "fatigue", Icon: Frown, label: "Fatigué", color: C.coral },
 ];
 const MEAL_LABELS = ["Petit-déjeuner", "Déjeuner", "Collation", "Dîner"];
 
 export function JournalScreen({ go }) {
   const [dayIdx, setDayIdx] = useState(1);
+  const [moodSel, setMoodSel] = useState(null);
 
   return (
     <SafeAreaView className="flex-1" style={{ backgroundColor: C.canvas }}>
@@ -25,18 +26,22 @@ export function JournalScreen({ go }) {
       <View className="flex-row items-center justify-between px-5 pb-[14px]">
         <Pressable
           onPress={() => setDayIdx(Math.max(0, dayIdx - 1))}
-          className="h-8 w-8 items-center justify-center rounded-full border"
+          accessibilityLabel="Jour précédent"
+          accessibilityRole="button"
+          className="h-[44px] w-[44px] items-center justify-center rounded-full border active:opacity-70"
           style={{ backgroundColor: C.card, borderColor: C.line }}
         >
-          <ChevronLeft size={15} color={C.ink} />
+          <ChevronLeft size={16} color={C.ink} />
         </Pressable>
         <Text className="text-[14.5px] font-bold" style={{ color: C.ink }}>{DAYS[dayIdx]}</Text>
         <Pressable
           onPress={() => setDayIdx(Math.min(2, dayIdx + 1))}
-          className="h-8 w-8 items-center justify-center rounded-full border"
+          accessibilityLabel="Jour suivant"
+          accessibilityRole="button"
+          className="h-[44px] w-[44px] items-center justify-center rounded-full border active:opacity-70"
           style={{ backgroundColor: C.card, borderColor: C.line }}
         >
-          <ChevronRight size={15} color={C.ink} />
+          <ChevronRight size={16} color={C.ink} />
         </Pressable>
       </View>
 
@@ -62,23 +67,41 @@ export function JournalScreen({ go }) {
                     Comment vous êtes-vous senti(e) ?
                   </Text>
                   <View className="flex-row" style={{ gap: 8 }}>
-                    {FEELINGS.map(({ Icon, label }) => (
-                      <Pressable
-                        key={label}
-                        className="flex-row items-center rounded-full border px-[10px] py-[6px]"
-                        style={{ backgroundColor: C.canvas, borderColor: C.line, gap: 5 }}
-                      >
-                        <Icon size={13} color={C.inkSoft} />
-                        <Text className="text-[11px]" style={{ color: C.inkSoft }}>{label}</Text>
-                      </Pressable>
-                    ))}
+                    {FEELINGS.map(({ id, Icon, label, color }) => {
+                      const isSelected = moodSel === id;
+                      return (
+                        <Pressable
+                          key={id}
+                          onPress={() => setMoodSel(isSelected ? null : id)}
+                          accessibilityLabel={label}
+                          accessibilityRole="radio"
+                          accessibilityState={{ selected: isSelected }}
+                          className="flex-row items-center rounded-full border px-[12px] py-[7px]"
+                          style={{
+                            backgroundColor: isSelected ? color : C.canvas,
+                            borderColor: isSelected ? color : C.line,
+                            gap: 5,
+                          }}
+                        >
+                          <Icon size={13} color={isSelected ? C.white : C.inkSoft} />
+                          <Text
+                            className="text-[11px] font-semibold"
+                            style={{ color: isSelected ? C.white : C.inkSoft }}
+                          >
+                            {label}
+                          </Text>
+                        </Pressable>
+                      );
+                    })}
                   </View>
                 </View>
               </>
             ) : (
               <Pressable
                 onPress={() => go("assistant")}
-                className="mt-[10px] flex-row items-center justify-center rounded-xl border-[1.5px] border-dashed py-3"
+                accessibilityLabel="Ajouter un repas"
+                accessibilityRole="button"
+                className="mt-[10px] flex-row items-center justify-center rounded-xl border-[1.5px] border-dashed py-3 active:opacity-70"
                 style={{ borderColor: C.greenLine, backgroundColor: C.greenTint, gap: 6 }}
               >
                 <Plus size={15} color={C.greenDeep} />

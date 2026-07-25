@@ -20,12 +20,32 @@ export function GoalScreen({ go }) {
       <TopBar title="Votre objectif" onBack={() => go("welcome")} />
 
       <View className="px-5 pb-1">
-        <View className="h-1 overflow-hidden rounded-full" style={{ backgroundColor: C.line }}>
-          <View className="h-full" style={{ width: "50%", backgroundColor: C.green }} />
+        {/* Step progress indicator */}
+        <View className="flex-row items-center" style={{ gap: 8 }}>
+          {[1, 2, 3, 4].map((step) => (
+            <View key={step} className="flex-1 flex-row items-center">
+              <View
+                className="h-2 flex-1 rounded-full"
+                style={{
+                  backgroundColor: step <= 2 ? C.green : C.line,
+                  opacity: step <= 2 ? 1 : 0.5,
+                }}
+              />
+              {step < 4 && <View className="w-0" />}
+            </View>
+          ))}
         </View>
-        <Text className="mt-2 text-[11.5px]" style={{ color: C.muted }}>
-          Étape 2 sur 4
-        </Text>
+        <View className="mt-[6px] flex-row justify-between">
+          {["Bienvenue", "Objectif", "Profil", "Prêt"].map((label, i) => (
+            <Text
+              key={label}
+              className="text-[10.5px] font-semibold"
+              style={{ color: i <= 1 ? C.greenDeep : C.muted, opacity: i <= 1 ? 1 : 0.5 }}
+            >
+              {label}
+            </Text>
+          ))}
+        </View>
       </View>
 
       <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 16, paddingBottom: 20, gap: 12 }}>
@@ -35,11 +55,19 @@ export function GoalScreen({ go }) {
             <Pressable
               key={t}
               onPress={() => setSel(t)}
-              className="flex-row items-center rounded-[18px] border-[1.5px] p-4"
+              accessibilityLabel={t}
+              accessibilityRole="radio"
+              accessibilityState={{ selected: isSel }}
+              className="flex-row items-center rounded-[18px] border-[1.5px] p-4 active:opacity-80"
               style={{
                 gap: 14,
                 borderColor: isSel ? C.green : C.line,
                 backgroundColor: isSel ? C.greenTint : C.card,
+                shadowColor: isSel ? C.green : 'transparent',
+                shadowOpacity: isSel ? 0.15 : 0,
+                shadowRadius: 12,
+                shadowOffset: { width: 0, height: 4 },
+                elevation: isSel ? 3 : 0,
               }}
             >
               <View
@@ -69,16 +97,25 @@ export function GoalScreen({ go }) {
         </View>
       </ScrollView>
 
-      <View className="px-5 pb-[30px]">
+      <View className="px-5 pb-[30px]">          
         <Pressable
-          onPress={() => go("dashboard")}
-          className="w-full items-center rounded-2xl py-[15px]"
-          style={{ backgroundColor: C.green }}
-        >
-          <Text className="text-[15px] font-bold" style={{ color: C.white }}>
-            Continuer
-          </Text>
-        </Pressable>
+            onPress={() => go("dashboard")}
+            accessibilityLabel="Continuer"
+            accessibilityRole="button"
+            className="w-full items-center rounded-2xl py-[15px] active:opacity-80"
+            style={{
+              backgroundColor: C.green,
+              shadowColor: C.green,
+              shadowOpacity: 0.4,
+              shadowRadius: 16,
+              shadowOffset: { width: 0, height: 8 },
+              elevation: 4,
+            }}
+          >
+            <Text className="text-[15px] font-bold" style={{ color: C.white }}>
+              Continuer
+            </Text>
+          </Pressable>
       </View>
     </SafeAreaView>
   );

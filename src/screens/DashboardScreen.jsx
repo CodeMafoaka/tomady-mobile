@@ -1,4 +1,5 @@
-import { View, Text, Pressable, ScrollView } from "react-native";
+import { useEffect, useRef } from "react";
+import { View, Text, Pressable, ScrollView, Animated } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { Bell, Beef, Wheat, Droplet, Sparkles, Plus } from "lucide-react-native";
@@ -6,6 +7,34 @@ import { C, FONTS } from "../constant/theme";
 import { Blob } from "../components/Blob";
 import { GrowthRing } from "../components/GrowthRing";
 import { USER, MEALS_TODAY } from "../data/mockData";
+
+function FadeInView({ delay = 0, children, style }) {
+  const opacity = useRef(new Animated.Value(0)).current;
+  const translateY = useRef(new Animated.Value(16)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(opacity, {
+        toValue: 1,
+        duration: 500,
+        delay,
+        useNativeDriver: true,
+      }),
+      Animated.timing(translateY, {
+        toValue: 0,
+        duration: 500,
+        delay,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [opacity, translateY, delay]);
+
+  return (
+    <Animated.View style={[{ opacity, transform: [{ translateY }] }, style]}>
+      {children}
+    </Animated.View>
+  );
+}
 
 export function DashboardScreen({ go }) {
   const pct = USER.caloriesConsumed / USER.calorieGoal;
@@ -30,19 +59,22 @@ export function DashboardScreen({ go }) {
         </View>
         <Pressable
           onPress={() => go("alerts")}
-          className="h-[38px] w-[38px] items-center justify-center rounded-full border"
+          accessibilityLabel="Alertes et notifications"
+          accessibilityRole="button"
+          className="h-[44px] w-[44px] items-center justify-center rounded-full border"
           style={{ backgroundColor: C.white, borderColor: C.line }}
         >
-          <Bell size={17} color={C.ink} />
+          <Bell size={18} color={C.ink} />
           <View
-            className="absolute h-[7px] w-[7px] rounded-full border"
-            style={{ top: 8, right: 9, backgroundColor: C.coral, borderColor: C.white }}
+            className="absolute h-[8px] w-[8px] rounded-full border-2"
+            style={{ top: 8, right: 8, backgroundColor: C.coral, borderColor: C.white }}
           />
         </Pressable>
       </View>
 
-      <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 14, paddingBottom: 100, gap: 14 }}>
-        {/* goal card */}
+      <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 14, paddingBottom: 100, gap: 20 }}>
+        {/* goal card animation */}
+        <FadeInView delay={0}>
         <LinearGradient
           colors={[C.ink, "#223B2C"]}
           start={{ x: 0.2, y: 0 }}
@@ -80,14 +112,22 @@ export function DashboardScreen({ go }) {
             </View>
           </View>
         </LinearGradient>
+        </FadeInView>
 
-        {/* macros */}
+        {/* macros avec stagger */}
         <View className="flex-row" style={{ gap: 10 }}>
-          {macros.map((m) => (
+          {macros.map((m, idx) => (
+            <FadeInView key={m.label} delay={150 + idx * 100} style={{ flex: 1 }}>
             <View
-              key={m.label}
-              className="flex-1 rounded-[18px] border-0 px-3 py-[14px] shadow-sm"
-              style={{ backgroundColor: C.card }}
+              className="rounded-[18px] border-0 px-3 py-[14px]"
+              style={{
+                backgroundColor: C.card,
+                shadowColor: '#000',
+                shadowOpacity: 0.04,
+                shadowRadius: 12,
+                shadowOffset: { width: 0, height: 4 },
+                elevation: 2,
+              }}
             >
               <m.Icon size={16} color={m.color} />
               <Text className="mt-2 text-[15px] font-extrabold" style={{ color: C.ink }}>
@@ -104,16 +144,22 @@ export function DashboardScreen({ go }) {
                 />
               </View>
             </View>
+            </FadeInView>
           ))}
         </View>
 
         {/* meals timeline */}
+        <FadeInView delay={500}>
         <View>
           <View className="mb-[10px] flex-row items-center justify-between">
             <Text style={{ fontFamily: FONTS.display, color: C.ink }} className="text-[15.5px] font-semibold">
               Repas du jour
             </Text>
-            <Pressable onPress={() => go("journal")}>
+            <Pressable
+              onPress={() => go("journal")}
+              accessibilityLabel="Voir tous les repas"
+              accessibilityRole="button"
+            >
               <Text className="text-xs font-bold" style={{ color: C.greenDeep }}>
                 Voir tout
               </Text>
@@ -149,17 +195,27 @@ export function DashboardScreen({ go }) {
             ))}
           </View>
         </View>
+        </FadeInView>
 
         {/* AI insight */}
+        <FadeInView delay={650}>
         <View
-          className="flex-row rounded-[20px] border-0 p-[18px] shadow-sm"
-          style={{ backgroundColor: C.greenTint, gap: 12 }}
+          className="flex-row rounded-[20px] border-0 p-[18px]"
+          style={{
+            backgroundColor: C.violetTint,
+            gap: 12,
+            shadowColor: '#000',
+            shadowOpacity: 0.04,
+            shadowRadius: 16,
+            shadowOffset: { width: 0, height: 4 },
+            elevation: 2,
+          }}
         >
-          <View className="h-9 w-9 items-center justify-center rounded-full" style={{ backgroundColor: C.green }}>
+          <View className="h-9 w-9 items-center justify-center rounded-full" style={{ backgroundColor: C.violet }}>
             <Sparkles size={16} color={C.white} />
           </View>
           <View className="flex-1">
-            <Text className="text-[13px] font-extrabold uppercase tracking-[0.5px]" style={{ color: C.greenDeep }}>
+            <Text className="text-[13px] font-extrabold uppercase tracking-[0.5px]" style={{ color: C.violetDeep }}>
               Insight de Gemmify
             </Text>
             <Text
@@ -171,14 +227,24 @@ export function DashboardScreen({ go }) {
             </Text>
           </View>
         </View>
+        </FadeInView>
 
       </ScrollView>
 
       {/* FAB - Ajouter un repas */}
       <Pressable
         onPress={() => go("assistant")}
-        className="absolute bottom-6 right-5 h-[60px] w-[60px] items-center justify-center rounded-full shadow-md active:opacity-80"
-        style={{ backgroundColor: C.ink, elevation: 4 }}
+        accessibilityLabel="Ajouter un repas"
+        accessibilityRole="button"
+        className="absolute bottom-6 right-5 h-[60px] w-[60px] items-center justify-center rounded-full active:opacity-80"
+        style={{
+          backgroundColor: C.ink,
+          shadowColor: '#000',
+          shadowOpacity: 0.2,
+          shadowRadius: 16,
+          shadowOffset: { width: 0, height: 6 },
+          elevation: 6,
+        }}
       >
         <Plus size={24} color={C.white} />
       </Pressable>

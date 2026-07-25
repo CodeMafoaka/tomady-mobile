@@ -77,7 +77,9 @@ export function ProfileScreen() {
             return (
               <Pressable
                 key={label}
-                className="flex-row items-center px-4 py-[14px]"
+                accessibilityLabel={label}
+                accessibilityRole="button"
+                className="flex-row items-center px-4 py-[14px] active:opacity-70"
                 style={{ gap: 12, borderBottomWidth: i < arr.length - 1 ? 1 : 0, borderBottomColor: C.line }}
               >
                 <Icon size={16} color={isDanger ? C.coral : C.inkSoft} />

@@ -6,7 +6,7 @@ import { C } from "@/constant/theme";
 export const TABS = [
   { id: "dashboard", label: "Accueil", Icon: Home },
   { id: "journal", label: "Journal", Icon: BookOpen },
-  { id: "catalogue", label: "Catalogue", Icon: Compass },
+  { id: "catalogue", label: "Explorer", Icon: Compass },
   { id: "assistant", label: "Assistant", Icon: Sparkles },
   { id: "profile", label: "Profil", Icon: User },
 ];
@@ -26,6 +26,8 @@ export function BottomNav({ active, go }) {
             <Pressable
               key={id}
               onPress={() => go(id)}
+              accessibilityLabel={label}
+              accessibilityRole="tab"
               className="items-center"
               style={{ gap: 4, transform: [{ translateY: -14 }] }}
             >
@@ -52,7 +54,15 @@ export function BottomNav({ active, go }) {
         }
 
         return (
-          <Pressable key={id} onPress={() => go(id)} className="flex-1 items-center" style={{ gap: 5 }}>
+          <Pressable
+            key={id}
+            onPress={() => go(id)}
+            accessibilityLabel={label}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: isActive }}
+            className="flex-1 items-center justify-center py-1"
+            style={{ gap: 5 }}
+          >
             <Icon size={20} color={isActive ? C.green : C.muted} strokeWidth={isActive ? 2.4 : 2} />
             <Text
               className="text-[10px]"

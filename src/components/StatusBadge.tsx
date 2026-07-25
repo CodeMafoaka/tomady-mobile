@@ -12,6 +12,7 @@ export function StatusBadge({ level, textOverride }) {
     <View
       className="flex-row items-center self-start rounded-full px-[10px] py-[5px]"
       style={{ backgroundColor: map.bg, gap: 6 }}
+      accessibilityLabel={map.text}
     >
       <View className="h-[6px] w-[6px] rounded-full" style={{ backgroundColor: map.dot }} />
       <Text className="text-[11.5px] font-bold" style={{ color: map.fg }}>

@@ -68,6 +68,9 @@ export function StatsScreen() {
                   <Pressable
                     key={r}
                     onPress={() => setRange(r)}
+                    accessibilityLabel={`Période : ${r}`}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: active }}
                     className="rounded-[8px] px-2 py-[5px]"
                     style={{ backgroundColor: active ? C.green : "transparent" }}
                   >

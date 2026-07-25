@@ -10,7 +10,7 @@ export function AssistantScreen({ openVoice }) {
     <SafeAreaView className="flex-1" style={{ backgroundColor: C.canvas }}>
       <View className="flex-row items-center px-5 pb-[14px] pt-[6px]" style={{ gap: 12 }}>
         <LinearGradient
-          colors={[C.green, C.greenDeep]}
+          colors={[C.violet, C.violetDeep]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           className="h-[42px] w-[42px] items-center justify-center rounded-full"
@@ -23,9 +23,9 @@ export function AssistantScreen({ openVoice }) {
           </Text>
           <Text className="text-[11.5px]" style={{ color: C.muted }}>Votre intelligence nutritionnelle personnelle</Text>
         </View>
-        <View className="flex-row items-center rounded-full px-[9px] py-[5px]" style={{ backgroundColor: C.greenTint, gap: 5 }}>
-          <View className="h-[6px] w-[6px] rounded-full" style={{ backgroundColor: C.green }} />
-          <Text className="text-[10.5px] font-bold" style={{ color: C.greenDeep }}>IA prête</Text>
+        <View className="flex-row items-center rounded-full px-[9px] py-[5px]" style={{ backgroundColor: C.violetTint, gap: 5 }}>
+          <View className="h-[6px] w-[6px] rounded-full" style={{ backgroundColor: C.violet }} />
+          <Text className="text-[10.5px] font-bold" style={{ color: C.violetDeep }}>IA prête</Text>
         </View>
       </View>
 
@@ -48,9 +48,9 @@ export function AssistantScreen({ openVoice }) {
                 <Text className="text-[13.5px]" style={{ color: C.inkSoft }}>{m.text}</Text>
               </View>
               {m.card && (
-                <View className="rounded-2xl border p-[14px]" style={{ backgroundColor: C.greenTint, borderColor: C.greenLine }}>
+                <View className="rounded-2xl border p-[14px]" style={{ backgroundColor: C.violetTint, borderColor: 'rgba(139,92,246,0.15)' }}>
                   <View className="mb-2 flex-row" style={{ gap: 14 }}>
-                    <Text className="text-[12.5px] font-extrabold" style={{ color: C.greenDeep }}>{m.card.kcal} kcal</Text>
+                    <Text className="text-[12.5px] font-extrabold" style={{ color: C.violetDeep }}>{m.card.kcal} kcal</Text>
                     <Text className="text-[12.5px]" style={{ color: C.inkSoft }}>
                       P{m.card.p} · G{m.card.c} · L{m.card.f}
                     </Text>
@@ -59,8 +59,10 @@ export function AssistantScreen({ openVoice }) {
                     {m.card.note}
                   </Text>
                   <Pressable
-                    className="mt-[10px] flex-row items-center justify-center rounded-[10px] py-[10px]"
-                    style={{ backgroundColor: C.green, gap: 6 }}
+                    accessibilityLabel="Enregistrer dans mon journal"
+                    accessibilityRole="button"
+                    className="mt-[10px] flex-row items-center justify-center rounded-[10px] py-[10px] active:opacity-80"
+                    style={{ backgroundColor: C.violet, gap: 6 }}
                   >
                     <Check size={13} color={C.white} />
                     <Text className="text-xs font-bold" style={{ color: C.white }}>Enregistrer dans mon journal</Text>
@@ -88,15 +90,41 @@ export function AssistantScreen({ openVoice }) {
         <TextInput
           placeholder="Écrire un message..."
           placeholderTextColor={C.muted}
+          accessibilityLabel="Message"
+          accessibilityRole="text"
           className="flex-1 rounded-full border px-4 py-3 text-[13px]"
           style={{ backgroundColor: C.card, borderColor: C.line, color: C.ink }}
         />
-        <Pressable className="h-11 w-11 items-center justify-center rounded-full" style={{ backgroundColor: C.ink }}>
+        <Pressable
+          accessibilityLabel="Envoyer le message"
+          accessibilityRole="button"
+          className="h-[44px] w-[44px] items-center justify-center rounded-full active:opacity-80"
+          style={{
+            backgroundColor: C.ink,
+            shadowColor: '#000',
+            shadowOpacity: 0.15,
+            shadowRadius: 8,
+            shadowOffset: { width: 0, height: 4 },
+            elevation: 4,
+          }}
+        >
           <Send size={16} color={C.white} />
         </Pressable>
-        <Pressable onPress={openVoice} className="h-[46px] w-[46px] items-center justify-center rounded-full">
+        <Pressable
+          onPress={openVoice}
+          accessibilityLabel="Activer la reconnaissance vocale"
+          accessibilityRole="button"
+          className="h-[48px] w-[48px] items-center justify-center rounded-full active:opacity-80"
+          style={{
+            shadowColor: C.violet,
+            shadowOpacity: 0.4,
+            shadowRadius: 12,
+            shadowOffset: { width: 0, height: 4 },
+            elevation: 4,
+          }}
+        >
           <LinearGradient
-            colors={[C.green, C.greenDeep]}
+            colors={[C.violet, C.violetDeep]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             className="h-full w-full items-center justify-center rounded-full"

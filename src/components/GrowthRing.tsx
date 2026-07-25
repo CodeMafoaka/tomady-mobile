@@ -26,7 +26,12 @@ export function GrowthRing({
   const by = cy + r * Math.sin(rad);
 
   return (
-    <View style={{ width: size, height: size }}>
+    <View
+      style={{ width: size, height: size }}
+      accessibilityLabel={`Progression : ${Math.round(p * 100)}%`}
+      accessibilityRole="progressbar"
+      accessibilityValue={{ min: 0, max: 100, now: Math.round(p * 100) }}
+    >
       <Svg width={size} height={size}>
         <Defs>
           <LinearGradient id="gemRingGrad" x1="0%" y1="0%" x2="100%" y2="100%">
