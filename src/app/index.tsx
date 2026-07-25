@@ -262,8 +262,8 @@ export default function App() {
   const useFade = isTabToTab || isDetailToDetail || (!isGoingForward && !isGoingBack);
 
   const enteringAnimation = isGoingForward
-  ? SlideInRight.duration(200).springify().damping(24).stiffness(200).overshootClamping(1)
-  : SlideInLeft.duration(200).springify().damping(26).stiffness(200).overshootClamping(1);
+  ? SlideInRight.duration(200).springify().damping(24).stiffness(200)
+  : SlideInLeft.duration(200).springify().damping(26).stiffness(200);
 
   if (isAppLocked) {
     const minutes = Math.floor(timeLeft / 60);
