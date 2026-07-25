@@ -141,18 +141,18 @@ export default function App() {
           />
         );
       case "goal": return <GoalScreen go={go} />;
-      case "dashboard": return <DashboardScreen go={go} />;
+      case "dashboard": return <DashboardScreen go={go} profile={profile} />;
       case "journal": return <JournalScreen go={go} meals={meals} />;
-      case "catalogue": return <CatalogueScreen go={go} openFood={openFood} />;
-      case "detail": return <FoodDetailScreen food={food} go={go} />;
-      case "stats": return <StatsScreen />;
+      case "catalogue": return <CatalogueScreen go={go} openFood={openFood} profile={profile} />;
+      case "detail": return <FoodDetailScreen food={food} go={go} profile={profile} />;
+      case "stats": return <StatsScreen profile={profile} />;
       case "assistant": return <AssistantScreen openVoice={() => setVoiceOpen(true)} addMeal={addMeal} />;
       case "alerts": return <AlertsScreen go={go} />;
       case "profile": return <ProfileScreen go={go} profile={profile} />;
       case "profileEdit": return <ProfileEditScreen onBack={() => go("profile")} onSave={updateProfile} profile={profile} />;
       case "privacy": return <PrivacyScreen go={go} />;
-      case "forbiddenFoods": return <ForbiddenFoodsScreen go={go} openFood={openFood} />;
-      default: return <DashboardScreen go={go} />;
+      case "forbiddenFoods": return <ForbiddenFoodsScreen go={go} openFood={openFood} profile={profile} />;
+      default: return <DashboardScreen go={go} profile={profile} />;
     }
   };
 

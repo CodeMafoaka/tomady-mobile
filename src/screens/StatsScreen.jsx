@@ -47,7 +47,8 @@ function WeightChart({ data, width = 300, height = 130, min = 62, max = 76 }) {
   );
 }
 
-export function StatsScreen() {
+export function StatsScreen({ profile: propProfile }) {
+  const p = propProfile || USER;
   const [range, setRange] = useState("30j");
 
   return (
@@ -83,15 +84,15 @@ export function StatsScreen() {
 
           <View className="mb-1 mt-3 flex-row" style={{ gap: 16 }}>
             <View>
-              <Text className="text-[17px] font-extrabold" style={{ color: C.ink }}>{USER.weight.current} kg</Text>
+              <Text className="text-[17px] font-extrabold" style={{ color: C.ink }}>{p.weight.current} kg</Text>
               <Text className="text-[10px]" style={{ color: C.muted }}>Actuel</Text>
             </View>
             <View>
-              <Text className="text-[17px] font-extrabold" style={{ color: C.muted }}>{USER.weight.start} kg</Text>
+              <Text className="text-[17px] font-extrabold" style={{ color: C.muted }}>{p.weight.start} kg</Text>
               <Text className="text-[10px]" style={{ color: C.muted }}>Initial</Text>
             </View>
             <View>
-              <Text className="text-[17px] font-extrabold" style={{ color: C.greenDeep }}>{USER.weight.target} kg</Text>
+              <Text className="text-[17px] font-extrabold" style={{ color: C.greenDeep }}>{p.weight.target} kg</Text>
               <Text className="text-[10px]" style={{ color: C.muted }}>Objectif</Text>
             </View>
           </View>

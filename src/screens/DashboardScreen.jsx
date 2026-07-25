@@ -36,14 +36,15 @@ function FadeInView({ delay = 0, children, style }) {
   );
 }
 
-export function DashboardScreen({ go }) {
-  const pct = USER.caloriesConsumed / USER.calorieGoal;
-  const remaining = USER.calorieGoal - USER.caloriesConsumed;
+export function DashboardScreen({ go, profile: propProfile }) {
+  const p = propProfile || USER;
+  const pct = p.caloriesConsumed / p.calorieGoal;
+  const remaining = p.calorieGoal - p.caloriesConsumed;
 
   const macros = [
-    { label: "Protéines", ...USER.protein, color: C.green, Icon: Beef },
-    { label: "Glucides", ...USER.carbs, color: C.amber, Icon: Wheat },
-    { label: "Lipides", ...USER.fat, color: C.blue, Icon: Droplet },
+    { label: "Protéines", ...p.protein, color: C.green, Icon: Beef },
+    { label: "Glucides", ...p.carbs, color: C.amber, Icon: Wheat },
+    { label: "Lipides", ...p.fat, color: C.blue, Icon: Droplet },
   ];
 
   return (
@@ -51,7 +52,7 @@ export function DashboardScreen({ go }) {
       <View className="flex-row items-center justify-between px-5 pb-1 pt-2">
         <View>
           <Text style={{ fontFamily: FONTS.display, color: C.ink }} className="text-[20px] font-semibold">
-            Bonjour, {USER.name} 👋
+            Bonjour, {p.name} 👋
           </Text>
           <Text className="mt-[2px] text-[14.5px]" style={{ color: C.muted }}>
             Voici votre résumé nutritionnel du jour.
@@ -74,7 +75,7 @@ export function DashboardScreen({ go }) {
 
       <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 14, paddingBottom: 100, gap: 20 }}>
 
-        {USER.caloriesConsumed === 0 ? (
+        {p.caloriesConsumed === 0 ? (
           /* ---------- État vide ---------- */
           <View className="items-center justify-center py-[50px]" style={{ gap: 16 }}>
             <View
@@ -129,10 +130,10 @@ export function DashboardScreen({ go }) {
                   trackColor="rgba(255,255,255,0.14)"
                   label={
                     <Text className="text-[20px] font-extrabold" style={{ color: C.white }}>
-                      {USER.caloriesConsumed}
+                      {p.caloriesConsumed}
                     </Text>
                   }
-                  sublabel={<Text className="text-[12px]" style={{ color: "rgba(255,255,255,0.7)" }}>/ {USER.calorieGoal} kcal</Text>}
+                  sublabel={<Text className="text-[12px]" style={{ color: "rgba(255,255,255,0.7)" }}>/ {p.calorieGoal} kcal</Text>}
                 />
                 <View className="flex-1">
                   <Text className="text-[13px] font-bold uppercase tracking-[1px]" style={{ color: "rgba(255,255,255,0.65)" }}>
@@ -145,7 +146,7 @@ export function DashboardScreen({ go }) {
                     Encore <Text style={{ color: C.green }}>{remaining} kcal</Text> disponibles
                   </Text>
                   <Text className="mt-[6px] text-[13.5px]" style={{ color: "rgba(255,255,255,0.55)" }}>
-                    {USER.goal}
+                    {p.goal}
                   </Text>
                 </View>
               </View>

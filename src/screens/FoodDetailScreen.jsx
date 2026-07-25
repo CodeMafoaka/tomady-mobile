@@ -7,7 +7,8 @@ import { TopBar } from "../components/TopBar";
 import { StatusBadge } from "../components/StatusBadge";
 import { USER, FOODS } from "../data/mockData";
 
-export function FoodDetailScreen({ food, go }) {
+export function FoodDetailScreen({ food, go, profile: propProfile }) {
+  const p = propProfile || USER;
   const f = food || FOODS[0];
   const isGood = f.status === "good";
 
@@ -56,7 +57,7 @@ export function FoodDetailScreen({ food, go }) {
           </Text>
           <Text style={{ fontFamily: FONTS.displayItalic, color: C.inkSoft }} className="mt-2 text-[13.5px] leading-[21px]">
             {isGood
-              ? `Ce plat est riche en protéines et peut contribuer à votre objectif "${USER.goal}".`
+              ? `Ce plat est riche en protéines et peut contribuer à votre objectif "${p.goal}".`
               : `Ce plat est plus riche en lipides que vos habitudes récentes — à consommer occasionnellement.`}
           </Text>
         </View>
@@ -66,7 +67,7 @@ export function FoodDetailScreen({ food, go }) {
           <View className="flex-1">
             <Text className="text-[12.5px] font-extrabold" style={{ color: C.coralDeep }}>Attention</Text>
             <Text className="mt-1 text-[12.5px] leading-[19px]" style={{ color: C.coralDeep2 }}>
-              Vérifiez la présence d'allergènes ({USER.allergies.join(", ")}) avant de consommer ce plat en dehors de
+              Vérifiez la présence d'allergènes ({p.allergies.join(", ")}) avant de consommer ce plat en dehors de
               chez vous.
             </Text>
           </View>

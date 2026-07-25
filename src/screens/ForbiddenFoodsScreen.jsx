@@ -7,14 +7,14 @@ import { FOODS, USER } from "../data/mockData";
 
 /* ---------- logique de groupement ---------- */
 
-function buildGroups() {
+function buildGroups(profile) {
   const groups = [];
 
-  // 1. Allergies — croise USER.allergies avec FOODS.allergens
+  // 1. Allergies — croise profile.allergies avec FOODS.allergens
   const allergenFoods = FOODS.filter(
-    (f) => f.allergens && f.allergens.some((a) => USER.allergies.includes(a)),
+    (f) => f.allergens && f.allergens.some((a) => profile.allergies.includes(a)),
   );
-  if (USER.allergies.length > 0) {
+  if (profile.allergies.length > 0) {
     groups.push({
       key: "allergie",
       title: "Allergies",
@@ -22,7 +22,7 @@ function buildGroups() {
       bg: C.coralTint,
       fg: C.coral,
       items: [
-        ...USER.allergies.map((a) => ({ label: a, type: "allergen" })),
+        ...profile.allergies.map((a) => ({ label: a, type: "allergen" })),
         ...allergenFoods.map((f) => ({ label: f.name, type: "food", food: f })),
       ],
     });
@@ -30,16 +30,16 @@ function buildGroups() {
 
   // 2. Recommandation médicale — forbiddenByDoctor + conditions
   const medicalItems = [];
-  if (USER.forbiddenByDoctor?.length > 0) {
-    USER.forbiddenByDoctor.forEach((item) => {
+  if (profile.forbiddenByDoctor?.length > 0) {
+    profile.forbiddenByDoctor.forEach((item) => {
       const found = FOODS.find(
         (f) => f.name.toLowerCase().includes(item.toLowerCase()) || item.toLowerCase().includes(f.name.toLowerCase()),
       );
       medicalItems.push(found ? { label: found.name, type: "food", food: found } : { label: item, type: "text" });
     });
   }
-  if (USER.conditions?.length > 0) {
-    USER.conditions.forEach((c) => {
+  if (profile.conditions?.length > 0) {
+    profile.conditions.forEach((c) => {
       medicalItems.push({ label: c, type: "condition" });
     });
   }
@@ -56,8 +56,8 @@ function buildGroups() {
 
   // 3. Objectif personnel — basé sur le goal
   const goalFoods = FOODS.filter((f) => {
-    if (USER.goal === "Perte de poids") return f.status === "bad" || f.kcal > 400;
-    if (USER.goal === "Prise de masse") return f.status === "bad";
+    if (profile.goal === "Perte de poids") return f.status === "bad" || f.kcal > 400;
+    if (profile.goal === "Prise de masse") return f.status === "bad";
     return false;
   });
   if (goalFoods.length > 0) {
@@ -78,8 +78,9 @@ function buildGroups() {
    Écran : Aliments à éviter
    ============================================================== */
 
-export function ForbiddenFoodsScreen({ go, openFood }) {
-  const groups = buildGroups();
+export function ForbiddenFoodsScreen({ go, openFood, profile: propProfile }) {
+  const p = propProfile || USER;
+  const groups = buildGroups(p);
 
   return (
     <SafeAreaView className="flex-1" style={{ backgroundColor: C.canvas }}>

@@ -32,6 +32,7 @@ function FilterSheet({
   setHideAllergens,
   onReset,
   activeCount,
+  allergies = [],
 }) {
   const slideUp = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
   const fadeIn = useRef(new Animated.Value(0)).current;
@@ -199,7 +200,7 @@ function FilterSheet({
             </View>
 
             {/* --- Allergènes --- */}
-            {USER.allergies.length > 0 && (
+            {allergies.length > 0 && (
               <View>
                 <Text className="mb-[8px] text-[11px] font-extrabold uppercase tracking-[0.5px]" style={{ color: C.muted }}>
                   Allergènes
@@ -224,7 +225,7 @@ function FilterSheet({
                       Masquer mes allergènes
                     </Text>
                     <Text className="text-[11px]" style={{ color: C.muted }}>
-                      {USER.allergies.join(" · ")}
+                      {allergies.join(" · ")}
                     </Text>
                   </View>
                   <View
@@ -253,7 +254,8 @@ function FilterSheet({
    Écran : Catalogue avec filtres avancés
    ============================================================== */
 
-export function CatalogueScreen({ go, openFood }) {
+export function CatalogueScreen({ go, openFood, profile: propProfile }) {
+  const p = propProfile || USER;
   const [cat, setCat] = useState("Plats locaux");
   const [query, setQuery] = useState("");
 
@@ -290,7 +292,7 @@ export function CatalogueScreen({ go, openFood }) {
     if (macroDom === "glucides" && !(f.c >= f.p && f.c >= f.f)) return false;
     if (macroDom === "lipides" && !(f.f >= f.p && f.f >= f.c)) return false;
     // Allergènes
-    if (hideAllergens && f.allergens && f.allergens.some((a) => USER.allergies.includes(a))) return false;
+    if (hideAllergens && f.allergens && f.allergens.some((a) => p.allergies.includes(a))) return false;
     return true;
   });
 
@@ -422,8 +424,7 @@ export function CatalogueScreen({ go, openFood }) {
         ))}
       </ScrollView>
 
-      {/* Bottom sheet de filtres */}
-      <FilterSheet
+      {/* Bottom sheet de filtres */}        <FilterSheet
         visible={filtersOpen}
         onClose={() => setFiltersOpen(false)}
         calMin={calMin}
@@ -436,6 +437,7 @@ export function CatalogueScreen({ go, openFood }) {
         setHideAllergens={setHideAllergens}
         onReset={resetFilters}
         activeCount={activeFilterCount}
+        allergies={p.allergies}
       />
     </SafeAreaView>
   );
