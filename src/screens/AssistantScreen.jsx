@@ -119,73 +119,103 @@ export function AssistantScreen({ openVoice, addMeal }) {
         )}
       </ScrollView>
 
-      <View className="h-[36px] justify-center mb-3">
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ paddingHorizontal: 16, gap: 6 }}
-      >
-        {SUGGESTIONS.map((s) => (
-          <Pressable key={s} onPress={() => send(s)} className="rounded-full border px-[13px] py-2" style={{ backgroundColor: C.card, borderColor: C.line }}>
-            <Text className="text-[11.5px]" style={{ color: C.inkSoft }}>{s}</Text>
-          </Pressable>
-        ))}
-      </ScrollView>
-      </View>
+      {/* --- Suggestions --- */}
+      {SUGGESTIONS.length > 0 && (
+        <View className="h-[40px] justify-center">
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ paddingHorizontal: 20, gap: 6 }}
+          >
+            {SUGGESTIONS.map((s) => (
+              <Pressable
+                key={s}
+                onPress={() => send(s)}
+                className="rounded-full border px-[14px] py-[7px] active:opacity-70"
+                style={{ backgroundColor: C.white, borderColor: C.line }}
+              >
+                <Text className="text-[11.5px] font-medium" style={{ color: C.inkSoft }}>{s}</Text>
+              </Pressable>
+            ))}
+          </ScrollView>
+        </View>
+      )}
 
-      <View className="flex-row items-center px-5 pb-7 pt-[6px]" style={{ gap: 10 }}>
-        <TextInput
-          value={input}
-          onChangeText={setInput}
-          onSubmitEditing={() => send()}
-          returnKeyType="send"
-          placeholder="Écrire un message..."
-          placeholderTextColor={C.muted}
-          accessibilityLabel="Message"
-          accessibilityRole="text"
-          className="flex-1 rounded-full border px-4 py-3 text-[13px]"
-          style={{ backgroundColor: C.card, borderColor: C.line, color: C.ink }}
-        />
-        <Pressable
-          onPress={() => send()}
-          disabled={loading || !input.trim()}
-          accessibilityLabel="Envoyer le message"
-          accessibilityRole="button"
-          className="h-[44px] w-[44px] items-center justify-center rounded-full active:opacity-80"
+      {/* --- Barre de saisie premium --- */}
+      <View
+        className="px-5 pb-7 pt-3"
+        style={{
+          backgroundColor: C.canvas,
+          borderTopWidth: 1,
+          borderTopColor: "rgba(231,237,233,0.6)",
+          shadowColor: "#000",
+          shadowOpacity: 0.04,
+          shadowRadius: 12,
+          shadowOffset: { width: 0, height: -4 },
+          elevation: 3,
+        }}
+      >
+        <View
+          className="flex-row items-end rounded-[20px] border p-[5px]"
           style={{
-            backgroundColor: C.ink,
-            opacity: loading || !input.trim() ? 0.5 : 1,
-            shadowColor: '#000',
-            shadowOpacity: 0.15,
-            shadowRadius: 8,
-            shadowOffset: { width: 0, height: 4 },
-            elevation: 4,
-          }}
-        >
-          <Send size={16} color={C.white} />
-        </Pressable>
-        <Pressable
-          onPress={openVoice}
-          accessibilityLabel="Activer la reconnaissance vocale"
-          accessibilityRole="button"
-          className="h-[48px] w-[48px] items-center justify-center rounded-full active:opacity-80"
-          style={{
-            shadowColor: C.violet,
-            shadowOpacity: 0.4,
+            backgroundColor: C.white,
+            borderColor: input.trim() ? C.violet : C.line,
+            shadowColor: input.trim() ? C.violet : "transparent",
+            shadowOpacity: input.trim() ? 0.08 : 0,
             shadowRadius: 12,
             shadowOffset: { width: 0, height: 4 },
-            elevation: 4,
+            elevation: input.trim() ? 2 : 0,
+            gap: 6,
           }}
         >
-          <LinearGradient
-            colors={[C.violet, C.violetDeep]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            className="h-full w-full items-center justify-center rounded-full"
+          {/* Champ de texte multiligne */}
+          <TextInput
+            value={input}
+            onChangeText={setInput}
+            onSubmitEditing={() => send()}
+            returnKeyType="send"
+            placeholder="Écrire un message..."
+            placeholderTextColor={C.muted}
+            multiline
+            numberOfLines={1}
+            accessibilityLabel="Message"
+            accessibilityRole="text"
+            className="flex-1 max-h-[100px] px-3 py-[10px] text-[14px] leading-[20px]"
+            style={{ color: C.ink, minHeight: 40 }}
+          />
+
+          {/* Bouton vocal */}
+          <Pressable
+            onPress={openVoice}
+            accessibilityLabel="Activer la reconnaissance vocale"
+            accessibilityRole="button"
+            className="h-[38px] w-[38px] items-center justify-center rounded-full active:opacity-80"
           >
-            <Mic size={19} color={C.white} />
-          </LinearGradient>
-        </Pressable>
+            <LinearGradient
+              colors={[C.violet, C.violetDeep]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              className="h-full w-full items-center justify-center rounded-full"
+            >
+              <Mic size={16} color={C.white} />
+            </LinearGradient>
+          </Pressable>
+
+          {/* Bouton envoyer */}
+          <Pressable
+            onPress={() => send()}
+            disabled={loading || !input.trim()}
+            accessibilityLabel="Envoyer le message"
+            accessibilityRole="button"
+            className="h-[38px] w-[38px] items-center justify-center rounded-full active:opacity-80"
+            style={{
+              backgroundColor: input.trim() ? C.violet : C.line,
+              transform: [{ scale: input.trim() ? 1 : 0.95 }],
+            }}
+          >
+            <Send size={15} color={input.trim() ? C.white : C.muted} />
+          </Pressable>
+        </View>
       </View>
     </SafeAreaView>
   );
