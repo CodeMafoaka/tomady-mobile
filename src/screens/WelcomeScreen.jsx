@@ -1,7 +1,6 @@
-import { View, Text, Pressable } from "react-native";
+import { View, Text, Pressable, Image } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
-import { Leaf } from "lucide-react-native";
 import { C, FONTS } from "../constant/theme";
 import { Blob } from "../components/Blob";
 
@@ -17,9 +16,13 @@ export function WelcomeScreen({ go }) {
             colors={[C.green, C.greenDeep]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
-            className="mb-[26px] h-[92px] w-[92px] items-center justify-center rounded-full"
+            className="mb-[26px] h-[92px] w-[92px] items-center justify-center rounded-full overflow-hidden"
           >
-            <Leaf size={40} color={C.white} />
+            <Image
+              source={require("../../assets/images/icon.png")}
+              className="h-[52px] w-[52px]"
+              resizeMode="contain"
+            />
           </LinearGradient>
 
           <Text
