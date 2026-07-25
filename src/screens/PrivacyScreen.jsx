@@ -1,6 +1,6 @@
 import { View, Text, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Shield, Lock, Database, WifiOff, Info } from "lucide-react-native";
+import { Shield, Lock, Database, WifiOff, Info, Cpu } from "lucide-react-native";
 import { C, FONTS } from "../constant/theme";
 import { TopBar } from "../components/TopBar";
 
@@ -51,6 +51,29 @@ export function PrivacyScreen({ go }) {
             Tomady repose sur un modèle d'intelligence artificielle Gemma qui fonctionne
             intégralement sur votre appareil. Aucune donnée ne quitte votre téléphone.
           </Text>
+        </View>
+
+        {/* Mention IA locale */}
+        <View
+          className="flex-row items-center rounded-[18px] border p-4"
+          style={{ backgroundColor: C.violetTint, borderColor: "rgba(139,92,246,0.15)", gap: 14 }}
+        >
+          <View
+            className="h-[42px] w-[42px] items-center justify-center rounded-[12px]"
+            style={{ backgroundColor: C.violet }}
+          >
+            <Cpu size={18} color={C.white} />
+          </View>
+          <View className="flex-1">
+            <Text className="text-[14px] font-bold" style={{ color: C.violetDeep }}>
+              Analyse locale — zéro cloud
+            </Text>
+            <Text className="mt-[4px] text-[12px] leading-[18px]" style={{ color: C.inkSoft }}>
+              Vos repas sont analysés directement sur votre téléphone par le modèle Gemma, sans
+              connexion internet requise. Aucune photo, aucun texte ni aucune donnée nutritionnelle
+              n'est envoyé vers un serveur extérieur.
+            </Text>
+          </View>
         </View>
 
         {/* Cartes explicatives */}

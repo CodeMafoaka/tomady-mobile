@@ -5,7 +5,8 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Sparkles, Send, Mic, Check } from "lucide-react-native";
 import { C, FONTS } from "../constant/theme";
 import { CHAT, SUGGESTIONS } from "../data/mockData";
-import { analyzeMealText } from "../services/aiService";
+import { AIStatusBadge } from "../components/AIStatusBadge";
+import { analyzeMealText, getModelStatus } from "../services/aiService";
 
 export function AssistantScreen({ openVoice, addMeal }) {
   const [messages, setMessages] = useState(CHAT);
@@ -56,10 +57,7 @@ export function AssistantScreen({ openVoice, addMeal }) {
           </Text>
           <Text className="text-[11.5px]" style={{ color: C.muted }}>Votre intelligence nutritionnelle personnelle</Text>
         </View>
-        <View className="flex-row items-center rounded-full px-[9px] py-[5px]" style={{ backgroundColor: C.violetTint, gap: 5 }}>
-          <View className="h-[6px] w-[6px] rounded-full" style={{ backgroundColor: C.violet }} />
-          <Text className="text-[10.5px] font-bold" style={{ color: C.violetDeep }}>IA prête</Text>
-        </View>
+        <AIStatusBadge status={getModelStatus()} />
       </View>
 
       <ScrollView

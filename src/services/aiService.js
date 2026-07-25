@@ -17,7 +17,18 @@
  *     transcript: string,                 // texte transcrit (speech-to-text)
  *     kcal, p, c, f: number
  *   }>
+ *
+ *   getModelStatus() => "loading" | "ready" | "unavailable"
+ *     // >>> ÉQUIPE BACKEND : remplacez "ready" par le vrai statut du modèle.
  */
+
+/// Retourne le statut actuel du modèle Gemma local.
+/// Pour l'instant : toujours "ready" en mode démo.
+/// >>> ÉQUIPE BACKEND : branchez ici la vraie détection du modèle (ex: vérifier
+///     que le fichier .task Gemma est téléchargé et chargé en mémoire).
+export function getModelStatus() {
+  return "ready";
+}
 
 function fakeLatency(ms = 900) {
   return new Promise((resolve) => setTimeout(resolve, ms));
