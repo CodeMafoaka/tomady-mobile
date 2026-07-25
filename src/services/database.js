@@ -4,16 +4,20 @@
    Relations :
      users 1―* weight_entries (à venir)
      users 1―* meal_entries   ✓
-     users 1―* chat_messages  (à venir)
+     users 1―* chat_messages  ✓
 
    Contrat :
-     initDatabase()     → crée les tables si absentes
-     getUser()          → objet USER complet (ou null si vide)
-     saveUser(data)     → insert ou update l'utilisateur id=1
-     getMealsForDate()  → repas pour une date donnée
-     getTodayMeals()    → repas du jour
-     addMealEntry()     → ajoute un repas
-     updateMealFeeling()→ met à jour le ressenti d'un repas
+     initDatabase()      → crée les tables si absentes
+     getUser()           → objet USER complet (ou null si vide)
+     saveUser(data)      → insert ou update l'utilisateur id=1
+     getMealsForDate()   → repas pour une date donnée
+     getTodayMeals()     → repas du jour
+     addMealEntry()      → ajoute un repas
+     deleteMealEntry()   → supprime un repas
+     updateMealFeeling() → met à jour le ressenti
+     getChatMessages()   → historique des conversations
+     addChatMessage()    → ajoute un message
+     clearChatMessages() → efface l'historique
    ============================================================ */
 
 import * as SQLite from "expo-sqlite";
@@ -80,6 +84,26 @@ export async function initDatabase() {
   await db.execAsync(`
     CREATE INDEX IF NOT EXISTS idx_meals_date
     ON meal_entries(user_id, date);
+  `);
+
+  await db.execAsync(`
+    CREATE TABLE IF NOT EXISTS chat_messages (
+      id         INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id    INTEGER DEFAULT 1,
+      role       TEXT    NOT NULL,
+      text_content TEXT  NOT NULL,
+      card_kcal  INTEGER,
+      card_p     REAL,
+      card_c     REAL,
+      card_f     REAL,
+      card_note  TEXT,
+      created_at TEXT    DEFAULT (datetime('now'))
+    );
+  `);
+
+  await db.execAsync(`
+    CREATE INDEX IF NOT EXISTS idx_chat_date
+    ON chat_messages(created_at);
   `);
 }
 
@@ -281,6 +305,62 @@ export async function updateMealFeeling(id, feeling) {
 }
 
 /* ───────────────────────────────────────────
+   CHAT (chat_messages)
+   ─────────────────────────────────────────── */
+
+/**
+ * Récupère tous les messages du chat, du plus ancien au plus récent.
+ */
+export async function getChatMessages() {
+  const db = await getDb();
+  const rows = await db.getAllAsync(
+    `SELECT * FROM chat_messages
+     WHERE user_id = 1
+     ORDER BY id ASC`,
+  );
+  return rows.map(normalizeChatRow);
+}
+
+/**
+ * Ajoute un message dans l'historique.
+ *
+ * @param {object} msg
+ * @param {string}  msg.role          — 'user' | 'assistant'
+ * @param {string}  msg.text_content
+ * @param {number}  [msg.card_kcal]
+ * @param {number}  [msg.card_p]
+ * @param {number}  [msg.card_c]
+ * @param {number}  [msg.card_f]
+ * @param {string}  [msg.card_note]
+ */
+export async function addChatMessage(msg) {
+  const db = await getDb();
+  await db.runAsync(
+    `INSERT INTO chat_messages
+      (user_id, role, text_content, card_kcal, card_p, card_c, card_f, card_note)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      1,
+      msg.role,
+      msg.text_content || "",
+      msg.card_kcal ?? null,
+      msg.card_p ?? null,
+      msg.card_c ?? null,
+      msg.card_f ?? null,
+      msg.card_note || null,
+    ],
+  );
+}
+
+/**
+ * Efface tout l'historique des messages.
+ */
+export async function clearChatMessages() {
+  const db = await getDb();
+  await db.runAsync("DELETE FROM chat_messages WHERE user_id = 1");
+}
+
+/* ───────────────────────────────────────────
    Helpers
    ─────────────────────────────────────────── */
 
@@ -298,4 +378,21 @@ function normalizeMealRow(row) {
     meal_order: row.meal_order,
     date: row.date,
   };
+}
+
+function normalizeChatRow(row) {
+  const msg = {
+    from: row.role,
+    text: row.text_content,
+  };
+  if (row.card_kcal !== null) {
+    msg.card = {
+      kcal: row.card_kcal,
+      p: row.card_p,
+      c: row.card_c,
+      f: row.card_f,
+      note: row.card_note,
+    };
+  }
+  return msg;
 }

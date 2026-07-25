@@ -1,34 +1,61 @@
-import { useState, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { View, Text, Pressable, ScrollView, TextInput, ActivityIndicator } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { Sparkles, Send, Mic, Check } from "lucide-react-native";
 import { C, FONTS } from "../constant/theme";
-import { CHAT, SUGGESTIONS } from "../data/mockData";
+import { SUGGESTIONS } from "../data/mockData";
 import { AIStatusBadge } from "../components/AIStatusBadge";
 import { analyzeMealText, getModelStatus } from "../services/aiService";
+import { getChatMessages, addChatMessage } from "../services/database";
 
 export function AssistantScreen({ openVoice, addMeal }) {
-  const [messages, setMessages] = useState(CHAT);
+  const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [savedCards, setSavedCards] = useState({});
   const scrollRef = useRef(null);
 
+  // Charger l'historique au montage
+  useEffect(() => {
+    (async () => {
+      const saved = await getChatMessages();
+      if (saved.length > 0) setMessages(saved);
+    })();
+  }, []);
+
   const send = async (textOverride) => {
     const text = (textOverride ?? input).trim();
     if (!text || loading) return;
-    setMessages((prev) => [...prev, { from: "user", text }]);
+
+    const userMsg = { from: "user", text };
+    setMessages((prev) => [...prev, userMsg]);
     setInput("");
     setLoading(true);
+
+    // Sauvegarder le message utilisateur dans SQLite
+    await addChatMessage({ role: "user", text_content: text });
+
     try {
       const result = await analyzeMealText(text);
-      setMessages((prev) => [...prev, { from: "ai", text: result.text, card: result.card }]);
+      const aiMsg = { from: "ai", text: result.text, card: result.card };
+      setMessages((prev) => [...prev, aiMsg]);
+
+      // Sauvegarder la réponse IA dans SQLite
+      await addChatMessage({
+        role: "assistant",
+        text_content: result.text,
+        card_kcal: result.card?.kcal ?? null,
+        card_p: result.card?.p ?? null,
+        card_c: result.card?.c ?? null,
+        card_f: result.card?.f ?? null,
+        card_note: result.card?.note || null,
+      });
     } catch (e) {
-      setMessages((prev) => [
-        ...prev,
-        { from: "ai", text: "Désolé, une erreur est survenue pendant l'analyse. Réessayez." },
-      ]);
+      const errMsg = "Désolé, une erreur est survenue pendant l'analyse. Réessayez.";
+      setMessages((prev) => [...prev, { from: "ai", text: errMsg }]);
+
+      await addChatMessage({ role: "assistant", text_content: errMsg });
     } finally {
       setLoading(false);
       requestAnimationFrame(() => scrollRef.current?.scrollToEnd({ animated: true }));
