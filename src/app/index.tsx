@@ -42,7 +42,8 @@ import { ProfileScreen } from "../screens/ProfileScreen";
 import { ProfileEditScreen } from "../screens/ProfileEditScreen";
 import { PrivacyScreen } from "../screens/PrivacyScreen";
 import { ForbiddenFoodsScreen } from "../screens/ForbiddenFoodsScreen";
-import { FOODS, MEALS_TODAY, USER } from "../data/mockData";
+import { FOODS, MEALS_TODAY } from "../data/mockData";
+import { initDatabase, getUser, saveUser } from "../services/database";
 
 const MAIN_TABS = new Set(["dashboard", "journal", "catalogue", "assistant", "profile"]);
 
@@ -62,7 +63,21 @@ export default function App() {
   const [toast, setToast] = useState(null);
   const [food, setFood] = useState(FOODS[0]);
   const [meals, setMeals] = useState(MEALS_TODAY);
-  const [profile, setProfile] = useState(USER);
+  const [profile, setProfile] = useState({});
+  const [dbReady, setDbReady] = useState(false);
+
+  // Charger l'utilisateur depuis SQLite au démarrage
+  useEffect(() => {
+    (async () => {
+      await initDatabase();
+      const saved = await getUser();
+      if (saved) {
+        setProfile(saved);
+        setScreen("dashboard");
+      }
+      setDbReady(true);
+    })();
+  }, []);
 
   // Navigation direction tracking for animated transitions
   const prevScreenRef = useRef(screen);
@@ -123,15 +138,16 @@ export default function App() {
     }
   };
 
-  if (!fontsLoaded) return null;
+  if (!fontsLoaded || !dbReady) return null;
 
   const go = (id) => {
     setScreen(id);
     setVoiceOpen(false);
   };
 
-  const updateProfile = (newProfile) => {
+  const updateProfile = async (newProfile) => {
     setProfile(newProfile);
+    await saveUser(newProfile);
   };
 
   const showToast = (message) => {
