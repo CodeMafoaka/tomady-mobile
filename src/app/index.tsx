@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { View, Text, TextInput, Pressable } from "react-native";
+import { useState, useEffect, useRef } from "react";
+import { View, Text, TextInput, Pressable, StyleSheet } from "react-native";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { Lock } from "lucide-react-native";
 import { StatusBar } from "expo-status-bar";
@@ -16,6 +16,14 @@ import {
   Inter_800ExtraBold,
 } from "@expo-google-fonts/inter";
 
+import Animated, {
+  FadeIn,
+  FadeOut,
+  SlideInLeft,
+  SlideInRight,
+  SlideOutLeft,
+  SlideOutRight,
+} from "react-native-reanimated";
 import { C } from "../constant/theme";
 import { BottomNav } from "../components/BottomNav";
 import { WelcomeScreen } from "../screens/WelcomeScreen";
@@ -55,6 +63,28 @@ export default function App() {
   const [food, setFood] = useState(FOODS[0]);
   const [meals, setMeals] = useState(MEALS_TODAY);
   const [profile, setProfile] = useState(USER);
+
+  // Navigation direction tracking for animated transitions
+  const prevScreenRef = useRef(screen);
+
+  // Screens that should slide in from the right ("push" navigation)
+  const DETAIL_SCREENS = new Set([
+    "detail",
+    "alerts",
+    "profileEdit",
+    "privacy",
+    "forbiddenFoods",
+    "personalInfo",
+    "goal",
+    "stats",
+  ]);
+  // Main tab screens — use fade transitions between them
+  const TAB_SCREENS = new Set(["dashboard", "journal", "catalogue", "assistant", "profile"]);
+
+  // Keep prevScreenRef in sync (ref updates don't trigger re-renders)
+  useEffect(() => {
+    prevScreenRef.current = screen;
+  }, [screen]);
 
   // PIN Security State
   const [isAppLocked, setIsAppLocked] = useState(true);
@@ -164,6 +194,23 @@ export default function App() {
 
   const showNav = MAIN_TABS.has(screen);
 
+  // Determine entering/exiting animations based on direction
+  // Computed inline during render using prevScreenRef (still holds old screen)
+  // and screen (new screen) to avoid stale-ref bugs
+  const prev = prevScreenRef.current;
+  const isGoingForward = DETAIL_SCREENS.has(screen) && (TAB_SCREENS.has(prev) || prev === "welcome");
+  const isGoingBack = TAB_SCREENS.has(screen) && DETAIL_SCREENS.has(prev);
+  const isTabToTab = TAB_SCREENS.has(prev) && TAB_SCREENS.has(screen);
+  const isDetailToDetail = DETAIL_SCREENS.has(prev) && DETAIL_SCREENS.has(screen);
+  const useFade = isTabToTab || isDetailToDetail || (!isGoingForward && !isGoingBack);
+
+  const enteringAnimation = isGoingForward
+    ? SlideInRight.duration(320).springify().damping(24).stiffness(200)
+    : SlideInLeft.duration(280).springify().damping(26).stiffness(200);
+  const exitingAnimation = isGoingForward
+    ? SlideOutLeft.duration(200)
+    : SlideOutRight.duration(200);
+
   if (isAppLocked) {
     const minutes = Math.floor(timeLeft / 60);
     const seconds = timeLeft % 60;
@@ -231,8 +278,15 @@ export default function App() {
     <SafeAreaProvider>
       <View className="flex-1" style={{ backgroundColor: C.canvas }}>
         <StatusBar style="dark" />
-        <View className="flex-1" style={{ position: "relative" }}>
-          {renderScreen()}
+        <View className="flex-1" style={{ position: "relative", overflow: "hidden" }}>
+          <Animated.View
+            key={screen}
+            entering={useFade ? FadeIn.duration(280) : enteringAnimation}
+            exiting={useFade ? FadeOut.duration(150) : exitingAnimation}
+            style={StyleSheet.absoluteFill}
+          >
+            {renderScreen()}
+          </Animated.View>
           {voiceOpen && <VoiceModal close={() => setVoiceOpen(false)} addMeal={addMeal} />}
           {toast && <Toast message={toast} onDone={() => setToast(null)} />}
         </View>
