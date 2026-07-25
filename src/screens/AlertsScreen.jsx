@@ -1,6 +1,6 @@
-import { View, Text, ScrollView } from "react-native";
+import { View, Text, ScrollView, Pressable } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { ShieldAlert, AlertTriangle, Check } from "lucide-react-native";
+import { ShieldAlert, AlertTriangle, Check, ListX } from "lucide-react-native";
 import { C } from "../constant/theme";
 import { TopBar } from "../components/TopBar";
 import { ALERTS } from "../data/mockData";
@@ -11,10 +11,23 @@ const STYLES = {
   good: { bg: C.greenTint, fg: C.green, Icon: Check },
 };
 
-export function AlertsScreen() {
+export function AlertsScreen({ go }) {
   return (
     <SafeAreaView className="flex-1" style={{ backgroundColor: C.canvas }}>
-      <TopBar title="Alertes" />
+      <TopBar
+        title="Alertes"
+        right={
+          <Pressable
+            onPress={() => go?.("forbiddenFoods")}
+            accessibilityLabel="Aliments à éviter"
+            accessibilityRole="button"
+            className="h-[44px] w-[44px] items-center justify-center rounded-full border active:opacity-70"
+            style={{ backgroundColor: C.card, borderColor: C.line }}
+          >
+            <ListX size={17} color={C.coral} />
+          </Pressable>
+        }
+      />
       <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 100, gap: 12 }}>
         {ALERTS.map((a, i) => {
           const s = STYLES[a.type];

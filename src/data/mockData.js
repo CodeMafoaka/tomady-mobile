@@ -18,6 +18,7 @@ export const USER = {
   intolerances: ["Lactose"],
   conditions: ["Légère hypertension"],
   restrictedFoods: [],
+  forbiddenByDoctor: ["Alcool", "Fritures", "Charcuterie"],
   region: "Antananarivo, Madagascar",
 };
 

@@ -33,6 +33,7 @@ import { AlertsScreen } from "../screens/AlertsScreen";
 import { ProfileScreen } from "../screens/ProfileScreen";
 import { ProfileEditScreen } from "../screens/ProfileEditScreen";
 import { PrivacyScreen } from "../screens/PrivacyScreen";
+import { ForbiddenFoodsScreen } from "../screens/ForbiddenFoodsScreen";
 import { FOODS, MEALS_TODAY, USER } from "../data/mockData";
 
 const MAIN_TABS = new Set(["dashboard", "journal", "catalogue", "assistant", "profile"]);
@@ -146,10 +147,11 @@ export default function App() {
       case "detail": return <FoodDetailScreen food={food} go={go} />;
       case "stats": return <StatsScreen />;
       case "assistant": return <AssistantScreen openVoice={() => setVoiceOpen(true)} addMeal={addMeal} />;
-      case "alerts": return <AlertsScreen />;
+      case "alerts": return <AlertsScreen go={go} />;
       case "profile": return <ProfileScreen go={go} profile={profile} />;
       case "profileEdit": return <ProfileEditScreen onBack={() => go("profile")} onSave={updateProfile} profile={profile} />;
       case "privacy": return <PrivacyScreen go={go} />;
+      case "forbiddenFoods": return <ForbiddenFoodsScreen go={go} openFood={openFood} />;
       default: return <DashboardScreen go={go} />;
     }
   };

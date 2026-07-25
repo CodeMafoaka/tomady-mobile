@@ -1,7 +1,7 @@
 import { View, Text, Pressable, ScrollView, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
-import { User, Settings, Lock, Download, Trash2, ChevronRight, Info } from "lucide-react-native";
+import { User, Settings, Lock, Download, Trash2, ChevronRight, Info, ShieldAlert } from "lucide-react-native";
 import { C } from "../constant/theme";
 import { TopBar } from "../components/TopBar";
 import { GrowthRing } from "../components/GrowthRing";
@@ -9,6 +9,7 @@ import { USER } from "../data/mockData";
 
 const SETTINGS_ROWS = [
   { label: "Préférences alimentaires", icon: User, danger: false },
+  { label: "Aliments à éviter", icon: ShieldAlert, danger: false },
   { label: "Confidentialité des données", icon: Lock, danger: false },
   { label: "Exporter mes données", icon: Download, danger: false },
   { label: "Supprimer mon compte", icon: Trash2, danger: true },
@@ -25,6 +26,9 @@ export function ProfileScreen({ go, profile: propProfile }) {
     switch (label) {
       case "Préférences alimentaires":
         go?.("profileEdit");
+        break;
+      case "Aliments à éviter":
+        go?.("forbiddenFoods");
         break;
       case "Confidentialité des données":
         go?.("privacy");
