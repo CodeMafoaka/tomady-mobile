@@ -60,6 +60,7 @@ export function AssistantScreen({ openVoice, addMeal }) {
         <AIStatusBadge status={getModelStatus()} />
       </View>
 
+      <View className="flex-1">
       <ScrollView
         ref={scrollRef}
         contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 12, gap: 12 }}
@@ -118,6 +119,7 @@ export function AssistantScreen({ openVoice, addMeal }) {
           </View>
         )}
       </ScrollView>
+      </View>
 
       {/* --- Suggestions --- */}
       {SUGGESTIONS.length > 0 && (
@@ -143,7 +145,7 @@ export function AssistantScreen({ openVoice, addMeal }) {
 
       {/* --- Barre de saisie premium --- */}
       <View
-        className="px-5 pb-7 pt-3"
+        className="px-5 pb-[100px] pt-3"
         style={{
           backgroundColor: C.canvas,
           borderTopWidth: 1,
