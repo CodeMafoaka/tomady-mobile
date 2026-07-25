@@ -14,10 +14,28 @@ const SETTINGS_ROWS = [
   ["Supprimer mon compte", Trash2],
 ];
 
-export function ProfileScreen() {
+export function ProfileScreen({ go, profile: propProfile }) {
+  const p = propProfile || USER;
+  const activityLabel = p.activityLevel
+    ? p.activityLevel.charAt(0).toUpperCase() + p.activityLevel.slice(1)
+    : "Actif";
+  const heightStr = p.height ? `${(p.height / 100).toFixed(2).replace(".", ",")} m` : "—";
+
   return (
     <SafeAreaView className="flex-1" style={{ backgroundColor: C.canvas }}>
-      <TopBar title="Profil" right={<Settings size={17} color={C.ink} />} />
+      <TopBar
+        title="Profil"
+        right={
+          <Pressable
+            onPress={() => go?.("profileEdit")}
+            accessibilityLabel="Modifier le profil"
+            accessibilityRole="button"
+            className="h-[44px] w-[44px] items-center justify-center rounded-full active:opacity-70"
+          >
+            <Settings size={17} color={C.ink} />
+          </Pressable>
+        }
+      />
 
       <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 100, gap: 14 }}>
         <View className="flex-row items-center rounded-[20px] border p-4" style={{ backgroundColor: C.card, borderColor: C.line, gap: 14 }}>
@@ -30,9 +48,11 @@ export function ProfileScreen() {
             <User size={24} color={C.white} />
           </LinearGradient>
           <View>
-            <Text className="text-[17px] font-semibold" style={{ color: C.ink }}>{USER.name}</Text>
-            <Text className="mt-[2px] text-[11.5px]" style={{ color: C.muted }}>{USER.region}</Text>
-            <Text className="mt-[2px] text-[11.5px]" style={{ color: C.muted }}>68 kg · 1,65 m · Actif</Text>
+            <Text className="text-[17px] font-semibold" style={{ color: C.ink }}>{p.firstName || p.name}</Text>
+            <Text className="mt-[2px] text-[11.5px]" style={{ color: C.muted }}>{p.region}</Text>
+            <Text className="mt-[2px] text-[11.5px]" style={{ color: C.muted }}>
+              {p.weight?.current} kg · {heightStr} · {activityLabel}
+            </Text>
           </View>
         </View>
 
@@ -47,9 +67,9 @@ export function ProfileScreen() {
               sublabel={null}
             />
             <View>
-              <Text className="text-sm font-bold" style={{ color: C.ink }}>{USER.goal}</Text>
+              <Text className="text-sm font-bold" style={{ color: C.ink }}>{p.goal}</Text>
               <Text className="mt-[2px] text-xs" style={{ color: C.muted }}>
-                {USER.weight.current} kg → {USER.weight.target} kg
+                {p.weight?.current} kg → {p.weight?.target} kg
               </Text>
             </View>
           </View>
@@ -58,12 +78,12 @@ export function ProfileScreen() {
         <View className="rounded-[20px] border p-4" style={{ backgroundColor: C.card, borderColor: C.line }}>
           <Text className="mb-[10px] text-[11px] font-extrabold uppercase tracking-[0.5px]" style={{ color: C.muted }}>Santé</Text>
           <View className="flex-row flex-wrap" style={{ gap: 7 }}>
-            {USER.allergies.map((a) => (
+            {p.allergies?.map((a) => (
               <View key={a} className="rounded-full px-[10px] py-[5px]" style={{ backgroundColor: C.coralTint }}>
                 <Text className="text-[11.5px] font-bold" style={{ color: C.coral }}>{a}</Text>
               </View>
             ))}
-            {USER.conditions.map((a) => (
+            {p.conditions?.map((a) => (
               <View key={a} className="rounded-full px-[10px] py-[5px]" style={{ backgroundColor: C.amberTint }}>
                 <Text className="text-[11.5px] font-bold" style={{ color: C.amberDeep }}>{a}</Text>
               </View>

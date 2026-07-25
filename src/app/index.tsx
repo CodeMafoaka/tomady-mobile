@@ -29,7 +29,8 @@ import { AssistantScreen } from "../screens/AssistantScreen";
 import { VoiceModal } from "../screens/VoiceModal";
 import { AlertsScreen } from "../screens/AlertsScreen";
 import { ProfileScreen } from "../screens/ProfileScreen";
-import { FOODS, MEALS_TODAY } from "../data/mockData";
+import { ProfileEditScreen } from "../screens/ProfileEditScreen";
+import { FOODS, MEALS_TODAY, USER } from "../data/mockData";
 
 const MAIN_TABS = new Set(["dashboard", "journal", "catalogue", "assistant", "profile"]);
 
@@ -48,6 +49,7 @@ export default function App() {
   const [voiceOpen, setVoiceOpen] = useState(false);
   const [food, setFood] = useState(FOODS[0]);
   const [meals, setMeals] = useState(MEALS_TODAY);
+  const [profile, setProfile] = useState(USER);
 
   // PIN Security State
   const [isAppLocked, setIsAppLocked] = useState(true);
@@ -93,6 +95,10 @@ export default function App() {
     setVoiceOpen(false);
   };
 
+  const updateProfile = (newProfile) => {
+    setProfile(newProfile);
+  };
+
   // Ajoute un repas dans le premier créneau vide du journal du jour
   // (repère : kcal === null dans mockData.js). Sinon, l'ajoute en fin de liste.
   const addMeal = (partialMeal) => {
@@ -125,7 +131,8 @@ export default function App() {
       case "stats": return <StatsScreen />;
       case "assistant": return <AssistantScreen openVoice={() => setVoiceOpen(true)} addMeal={addMeal} />;
       case "alerts": return <AlertsScreen />;
-      case "profile": return <ProfileScreen />;
+      case "profile": return <ProfileScreen go={go} profile={profile} />;
+      case "profileEdit": return <ProfileEditScreen onBack={() => go("profile")} onSave={updateProfile} profile={profile} />;
       default: return <DashboardScreen go={go} />;
     }
   };

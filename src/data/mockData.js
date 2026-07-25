@@ -2,6 +2,9 @@
 
 export const USER = {
   name: "Aïna",
+  firstName: "Aïna",
+  lastName: "Razafin",
+  age: 28,
   goal: "Perte de poids",
   calorieGoal: 2000,
   caloriesConsumed: 1240,
@@ -9,8 +12,12 @@ export const USER = {
   carbs: { consumed: 150, goal: 220 },
   fat: { consumed: 40, goal: 65 },
   weight: { current: 68, start: 74, target: 63 },
+  height: 165,
+  activityLevel: "actif",
   allergies: ["Arachides", "Fruits de mer"],
+  intolerances: ["Lactose"],
   conditions: ["Légère hypertension"],
+  restrictedFoods: [],
   region: "Antananarivo, Madagascar",
 };
 
