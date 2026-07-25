@@ -424,7 +424,8 @@ export function CatalogueScreen({ go, openFood, profile: propProfile }) {
         ))}
       </ScrollView>
 
-      {/* Bottom sheet de filtres */}        <FilterSheet
+      {/* Bottom sheet de filtres */}
+      <FilterSheet
         visible={filtersOpen}
         onClose={() => setFiltersOpen(false)}
         calMin={calMin}
