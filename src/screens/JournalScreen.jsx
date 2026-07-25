@@ -1,0 +1,95 @@
+import { useState } from "react";
+import { View, Text, Pressable, ScrollView } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { ChevronLeft, ChevronRight, Smile, Meh, Frown, Plus } from "lucide-react-native";
+import { C } from "../constant/theme";
+import { TopBar } from "../components/TopBar";
+import { StatusBadge } from "../components/StatusBadge";
+import { MEALS_TODAY } from "../data/mockData";
+
+const DAYS = ["Hier", "Aujourd'hui", "Demain"];
+const FEELINGS = [
+  { Icon: Smile, label: "Énergique" },
+  { Icon: Meh, label: "Normal" },
+  { Icon: Frown, label: "Fatigué" },
+];
+const MEAL_LABELS = ["Petit-déjeuner", "Déjeuner", "Collation", "Dîner"];
+
+export function JournalScreen({ go }) {
+  const [dayIdx, setDayIdx] = useState(1);
+
+  return (
+    <SafeAreaView className="flex-1" style={{ backgroundColor: C.canvas }}>
+      <TopBar title="Mon journal" />
+
+      <View className="flex-row items-center justify-between px-5 pb-[14px]">
+        <Pressable
+          onPress={() => setDayIdx(Math.max(0, dayIdx - 1))}
+          className="h-8 w-8 items-center justify-center rounded-full border"
+          style={{ backgroundColor: C.card, borderColor: C.line }}
+        >
+          <ChevronLeft size={15} color={C.ink} />
+        </Pressable>
+        <Text className="text-[14.5px] font-bold" style={{ color: C.ink }}>{DAYS[dayIdx]}</Text>
+        <Pressable
+          onPress={() => setDayIdx(Math.min(2, dayIdx + 1))}
+          className="h-8 w-8 items-center justify-center rounded-full border"
+          style={{ backgroundColor: C.card, borderColor: C.line }}
+        >
+          <ChevronRight size={15} color={C.ink} />
+        </Pressable>
+      </View>
+
+      <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 100, gap: 12 }}>
+        {MEALS_TODAY.map((m, i) => (
+          <View key={i} className="rounded-[18px] border p-4" style={{ backgroundColor: C.card, borderColor: C.line }}>
+            <View className="flex-row items-center justify-between">
+              <Text className="text-[11px] font-extrabold uppercase tracking-[0.5px]" style={{ color: C.muted }}>
+                {MEAL_LABELS[i]}
+              </Text>
+              <Text className="text-[11.5px]" style={{ color: C.muted }}>{m.time}</Text>
+            </View>
+
+            {m.kcal ? (
+              <>
+                <Text className="mt-[6px] text-[14.5px] font-bold" style={{ color: C.ink }}>{m.name}</Text>
+                <View className="mt-[10px] flex-row items-center justify-between">
+                  <Text className="text-[12.5px] font-semibold" style={{ color: C.inkSoft }}>{m.kcal} kcal</Text>
+                  <StatusBadge level={m.status} textOverride={m.status === "good" ? "Équilibré" : "Modération"} />
+                </View>
+                <View className="mt-3 border-t pt-3" style={{ borderColor: C.line }}>
+                  <Text className="mb-[6px] text-[11px]" style={{ color: C.muted }}>
+                    Comment vous êtes-vous senti(e) ?
+                  </Text>
+                  <View className="flex-row" style={{ gap: 8 }}>
+                    {FEELINGS.map(({ Icon, label }) => (
+                      <Pressable
+                        key={label}
+                        className="flex-row items-center rounded-full border px-[10px] py-[6px]"
+                        style={{ backgroundColor: C.canvas, borderColor: C.line, gap: 5 }}
+                      >
+                        <Icon size={13} color={C.inkSoft} />
+                        <Text className="text-[11px]" style={{ color: C.inkSoft }}>{label}</Text>
+                      </Pressable>
+                    ))}
+                  </View>
+                </View>
+              </>
+            ) : (
+              <Pressable
+                onPress={() => go("assistant")}
+                className="mt-[10px] flex-row items-center justify-center rounded-xl border-[1.5px] border-dashed py-3"
+                style={{ borderColor: C.greenLine, backgroundColor: C.greenTint, gap: 6 }}
+              >
+                <Plus size={15} color={C.greenDeep} />
+                <Text className="text-[13px] font-bold" style={{ color: C.greenDeep }}>Ajouter un repas</Text>
+              </Pressable>
+            )}
+          </View>
+        ))}
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+export default JournalScreen;
