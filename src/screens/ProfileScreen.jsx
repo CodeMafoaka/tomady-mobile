@@ -1,4 +1,4 @@
-import { View, Text, Pressable, ScrollView } from "react-native";
+import { View, Text, Pressable, ScrollView, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { User, Settings, Lock, Download, Trash2, ChevronRight, Info } from "lucide-react-native";
@@ -8,10 +8,10 @@ import { GrowthRing } from "../components/GrowthRing";
 import { USER } from "../data/mockData";
 
 const SETTINGS_ROWS = [
-  ["Préférences alimentaires", User],
-  ["Confidentialité des données", Lock],
-  ["Exporter mes données", Download],
-  ["Supprimer mon compte", Trash2],
+  { label: "Préférences alimentaires", icon: User, danger: false },
+  { label: "Confidentialité des données", icon: Lock, danger: false },
+  { label: "Exporter mes données", icon: Download, danger: false },
+  { label: "Supprimer mon compte", icon: Trash2, danger: true },
 ];
 
 export function ProfileScreen({ go, profile: propProfile }) {
@@ -20,6 +20,34 @@ export function ProfileScreen({ go, profile: propProfile }) {
     ? p.activityLevel.charAt(0).toUpperCase() + p.activityLevel.slice(1)
     : "Actif";
   const heightStr = p.height ? `${(p.height / 100).toFixed(2).replace(".", ",")} m` : "—";
+
+  const handleSettingsPress = (label) => {
+    switch (label) {
+      case "Préférences alimentaires":
+        go?.("profileEdit");
+        break;
+      case "Confidentialité des données":
+        go?.("privacy");
+        break;
+      case "Exporter mes données":
+        Alert.alert(
+          "Export de données",
+          "Cette fonctionnalité sera disponible prochainement. Vos données pourront être exportées au format JSON.",
+          [{ text: "Compris", style: "default" }],
+        );
+        break;
+      case "Supprimer mon compte":
+        Alert.alert(
+          "Supprimer mon compte",
+          "Cette action est irréversible : toutes vos données locales (profil, historique des repas, objectifs) seront effacées.\n\nCette fonctionnalité est en cours de développement.",
+          [
+            { text: "Annuler", style: "cancel" },
+            { text: "Supprimer", style: "destructive" },
+          ],
+        );
+        break;
+    }
+  };
 
   return (
     <SafeAreaView className="flex-1" style={{ backgroundColor: C.canvas }}>
@@ -92,11 +120,12 @@ export function ProfileScreen({ go, profile: propProfile }) {
         </View>
 
         <View className="overflow-hidden rounded-[20px] border" style={{ backgroundColor: C.card, borderColor: C.line }}>
-          {SETTINGS_ROWS.map(([label, Icon], i, arr) => {
-            const isDanger = label.includes("Supprimer");
+          {SETTINGS_ROWS.map(({ label, icon: Icon, danger }, i, arr) => {
+            const isDanger = danger;
             return (
               <Pressable
                 key={label}
+                onPress={() => handleSettingsPress(label)}
                 accessibilityLabel={label}
                 accessibilityRole="button"
                 className="flex-row items-center px-4 py-[14px] active:opacity-70"
