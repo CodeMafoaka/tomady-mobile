@@ -127,8 +127,7 @@ const styles = StyleSheet.create({
   },
   core: {
     position: "absolute",
-    backgroundColor: "rgba(23, 23, 255, 0.33)",
-    borderWidth: 1,
+    backgroundColor: "transparent",
     borderColor: "rgba(255, 255, 255, 0.08)",
   },
   label: {
