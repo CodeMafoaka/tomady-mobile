@@ -979,17 +979,20 @@ export function startStreamingSession(
 ): () => void {
   if (!hasNativeBridge) {
     // Try REST API first, then fall back to mock
-    try {
-      const result = await apiFetch("/api/v1/gemma/ask", {
-        method: "POST",
-        body: JSON.stringify({ question: query, userId: "user-1" }),
-      });
+    let cancelled = false;
+    let cleanupFn: (() => void) | null = null;
+
+    apiFetch("/api/v1/gemma/ask", {
+      method: "POST",
+      body: JSON.stringify({ question: query, userId: "user-1" }),
+    }).then((result) => {
+      if (cancelled) return;
       const fullText = result.answer ?? result.rawResponse ?? result.message ?? "Pas de réponse.";
-      // Simulate streaming by splitting into tokens
       const tokens = fullText.split(" ");
       let idx = 0;
       let accumulated = "";
       const interval = setInterval(() => {
+        if (cancelled) { clearInterval(interval); return; }
         if (idx < tokens.length) {
           const token = (idx < tokens.length - 1 ? tokens[idx] + " " : tokens[idx]);
           accumulated += token;
@@ -1000,13 +1003,30 @@ export function startStreamingSession(
           onComplete(accumulated);
         }
       }, 80);
-      return () => clearInterval(interval);
-    } catch {
-      // Fall through to mock
-    }
+      cleanupFn = () => { cancelled = true; clearInterval(interval); };
+    }).catch(() => {
+      if (cancelled) return;
+      // Mock streaming fallback
+      const mockResponse = `Analyse (mode démo) de votre demande. En mode réel, Gemma 4 générerait une réponse personnalisée basée sur votre profil nutritionnel et vos préférences alimentaires.`;
+      const tokens = mockResponse.split(" ");
+      let idx = 0;
+      let fullText = "";
+      const interval = setInterval(() => {
+        if (cancelled) { clearInterval(interval); return; }
+        if (idx < tokens.length) {
+          const token = (idx < tokens.length - 1 ? tokens[idx] + " " : tokens[idx]);
+          fullText += token;
+          onToken(token);
+          idx++;
+        } else {
+          clearInterval(interval);
+          onComplete(fullText);
+        }
+      }, 80);
+      cleanupFn = () => { cancelled = true; clearInterval(interval); };
+    });
 
-    // Mock streaming: simulate token-by-token
-    const mockResponse = `Analyse (mode démo) de votre demande. En mode réel, Gemma 4 générerait une réponse personnalisée basée sur votre profil nutritionnel et vos préférences alimentaires.`;
+    return () => { cancelled = true; cleanupFn?.(); };
     const tokens = mockResponse.split(" ");
     let idx = 0;
     let fullText = "";
