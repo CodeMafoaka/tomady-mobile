@@ -367,7 +367,7 @@ export function CatalogueScreen({ go, openFood, profile: propProfile }) {
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={{ paddingHorizontal: 20, gap: 6 }}
-        style={{ marginBottom: 8 }}
+        style={{ height: 44, marginBottom: 8 }}
       >
         {categories.map((c) => {
           const active = cat === c;
@@ -390,7 +390,7 @@ export function CatalogueScreen({ go, openFood, profile: propProfile }) {
       </ScrollView>
 
       {/* Résultats */}
-      <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 100, gap: 12 }}>
+      <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 100, gap: 12 }} style={{ flex: 1 }}>
         {list.length === 0 && (
           <View className="mt-[30px] items-center" style={{ gap: 8 }}>
             <Text className="text-center text-[13px]" style={{ color: C.muted }}>
