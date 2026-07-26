@@ -363,13 +363,13 @@ export function CatalogueScreen({ go, openFood, profile: propProfile }) {
       </View>
 
       {/* Catégories */}
-      <View className="h-[36px] justify-center mb-2">
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ paddingHorizontal: 20, gap: 6 }}
-        >
-          {categories.map((c) => {
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={{ paddingHorizontal: 20, gap: 6 }}
+        style={{ marginBottom: 8 }}
+      >
+        {categories.map((c) => {
           const active = cat === c;
           return (
             <Pressable
@@ -388,7 +388,6 @@ export function CatalogueScreen({ go, openFood, profile: propProfile }) {
           );
         })}
       </ScrollView>
-      </View>
 
       {/* Résultats */}
       <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 100, gap: 12 }}>

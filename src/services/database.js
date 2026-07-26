@@ -432,6 +432,17 @@ export async function deleteWeightEntry(id) {
   await db.runAsync("DELETE FROM weight_entries WHERE id = ?", [id]);
 }
 
+/**
+ * Supprime toutes les données utilisateur (compte, repas, messages, poids).
+ */
+export async function deleteAccount() {
+  const db = await getDb();
+  await db.runAsync("DELETE FROM users");
+  await db.runAsync("DELETE FROM meal_entries");
+  await db.runAsync("DELETE FROM chat_messages");
+  await db.runAsync("DELETE FROM weight_entries");
+}
+
 /* ───────────────────────────────────────────
    Helpers
    ─────────────────────────────────────────── */
