@@ -1,17 +1,26 @@
+import { useState, useEffect } from "react";
 import { View, Text, Pressable, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ShieldAlert, AlertTriangle, Target, Info, ChevronRight } from "lucide-react-native";
 import { C, FONTS } from "../constant/theme";
 import { TopBar } from "../components/TopBar";
 import { FOODS, USER } from "../data/mockData";
+import { getProfile, searchFoods } from "../services/tomadyBridge";
 
 /* ---------- logique de groupement ---------- */
 
-function buildGroups(profile) {
+async function buildGroups(profile) {
   const groups = [];
 
-  // 1. Allergies — croise profile.allergies avec FOODS.allergens
-  const allergenFoods = FOODS.filter(
+  // Charger les aliments depuis le bridge si possible
+  let availableFoods = FOODS;
+  try {
+    const foods = await searchFoods("");
+    if (foods.length > 0) availableFoods = foods;
+  } catch {}
+
+  // 1. Allergies — croise profile.allergies avec les aliments
+  const allergenFoods = availableFoods.filter(
     (f) => f.allergens && f.allergens.some((a) => profile.allergies.includes(a)),
   );
   if (profile.allergies.length > 0) {
@@ -32,7 +41,7 @@ function buildGroups(profile) {
   const medicalItems = [];
   if (profile.forbiddenByDoctor?.length > 0) {
     profile.forbiddenByDoctor.forEach((item) => {
-      const found = FOODS.find(
+      const found = availableFoods.find(
         (f) => f.name.toLowerCase().includes(item.toLowerCase()) || item.toLowerCase().includes(f.name.toLowerCase()),
       );
       medicalItems.push(found ? { label: found.name, type: "food", food: found } : { label: item, type: "text" });
@@ -55,7 +64,7 @@ function buildGroups(profile) {
   }
 
   // 3. Objectif personnel — basé sur le goal
-  const goalFoods = FOODS.filter((f) => {
+  const goalFoods = availableFoods.filter((f) => {
     if (profile.goal === "Perte de poids") return f.status === "bad" || f.kcal > 400;
     if (profile.goal === "Prise de masse") return f.status === "bad";
     return false;
@@ -79,8 +88,25 @@ function buildGroups(profile) {
    ============================================================== */
 
 export function ForbiddenFoodsScreen({ go, openFood, profile: propProfile }) {
-  const p = propProfile || USER;
-  const groups = buildGroups(p);
+  const [p, setP] = useState(propProfile || USER);
+  const [groups, setGroups] = useState([]);
+
+  // Charger le profil et construire les groupes au montage
+  useEffect(() => {
+    (async () => {
+      try {
+        const profile = await getProfile();
+        const resolvedProfile = propProfile || profile || USER;
+        setP(resolvedProfile);
+        const result = await buildGroups(resolvedProfile);
+        setGroups(result);
+      } catch {
+        const resolvedProfile = propProfile || USER;
+        setP(resolvedProfile);
+        buildGroups(resolvedProfile).then(setGroups);
+      }
+    })();
+  }, [propProfile]);
 
   return (
     <SafeAreaView className="flex-1" style={{ backgroundColor: C.canvas }}>

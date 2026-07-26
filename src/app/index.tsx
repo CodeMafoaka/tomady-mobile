@@ -27,6 +27,7 @@ import { BottomNav } from "../components/BottomNav";
 import { Toast } from "../components/Toast";
 import { C } from "../constant/theme";
 import { FOODS } from "../data/mockData";
+import { getProfile, getMealsForDate } from "../services/tomadyBridge";
 import { AlertsScreen } from "../screens/AlertsScreen";
 import { AssistantScreen } from "../screens/AssistantScreen";
 import { CatalogueScreen } from "../screens/CatalogueScreen";
@@ -85,21 +86,45 @@ export default function App() {
     }));
   };
 
-  // Charger l'utilisateur depuis SQLite au démarrage
+  // Charger l'utilisateur depuis le bridge (natif → SQLite → mock) au démarrage
   useEffect(() => {
     (async () => {
       await initDatabase();
+
+      // 1. Essayer le bridge natif d'abord
+      try {
+        const bridgeProfile = await getProfile();
+        if (bridgeProfile && bridgeProfile.firstName) {
+          setProfile(bridgeProfile);
+          setScreen("dashboard");
+
+          // Charger les repas du jour via le bridge
+          const today = new Date().toISOString().split('T')[0];
+          const bridgeMeals = await getMealsForDate(today);
+          if (bridgeMeals.length > 0) {
+            setMeals(bridgeMeals);
+            applyDailyTotals(bridgeMeals);
+          }
+
+          setDbReady(true);
+          return;
+        }
+      } catch {
+        // Fall through to SQLite
+      }
+
+      // 2. Fallback SQLite
       const saved = await getUser();
       if (saved) {
         setProfile(saved);
         setScreen("dashboard");
-        // Charger les repas du jour
         const todayMeals = await getTodayMeals();
         if (todayMeals.length > 0) {
           setMeals(todayMeals);
           applyDailyTotals(todayMeals);
         }
       }
+
       setDbReady(true);
     })();
   }, []);

@@ -1,9 +1,11 @@
+import { useState, useEffect } from "react";
 import { View, Text, ScrollView, Pressable } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ShieldAlert, AlertTriangle, Check, ListX } from "lucide-react-native";
 import { C } from "../constant/theme";
 import { TopBar } from "../components/TopBar";
 import { ALERTS } from "../data/mockData";
+import { getAlerts } from "../services/tomadyBridge";
 
 const STYLES = {
   bad: { bg: C.coralTint, fg: C.coral, Icon: ShieldAlert },
@@ -12,6 +14,18 @@ const STYLES = {
 };
 
 export function AlertsScreen({ go }) {
+  const [alerts, setAlerts] = useState(ALERTS);
+
+  // Charger les alertes depuis le bridge au montage
+  useEffect(() => {
+    (async () => {
+      try {
+        const result = await getAlerts();
+        if (result.length > 0) setAlerts(result);
+      } catch {}
+    })();
+  }, []);
+
   return (
     <SafeAreaView className="flex-1" style={{ backgroundColor: C.canvas }}>
       <TopBar
@@ -29,7 +43,7 @@ export function AlertsScreen({ go }) {
         }
       />
       <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 100, gap: 12 }}>
-        {ALERTS.map((a, i) => {
+        {alerts.map((a, i) => {
           const s = STYLES[a.type];
           return (
             <View

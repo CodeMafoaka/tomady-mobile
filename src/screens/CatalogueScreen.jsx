@@ -6,6 +6,7 @@ import { C } from "../constant/theme";
 import { TopBar } from "../components/TopBar";
 import { StatusBadge } from "../components/StatusBadge";
 import { FOODS, CATEGORIES, USER } from "../data/mockData";
+import { searchFoods, getFoodCategories } from "../services/tomadyBridge";
 
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 
@@ -258,6 +259,8 @@ export function CatalogueScreen({ go, openFood, profile: propProfile }) {
   const p = propProfile || USER;
   const [cat, setCat] = useState("Plats locaux");
   const [query, setQuery] = useState("");
+  const [foodList, setFoodList] = useState(FOODS);
+  const [categories, setCategories] = useState(CATEGORIES);
 
   // Filtres avancés
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -272,8 +275,22 @@ export function CatalogueScreen({ go, openFood, profile: propProfile }) {
     (macroDom !== null ? 1 : 0) +
     (hideAllergens ? 1 : 0);
 
+  // Charger les aliments depuis le bridge au montage
+  useEffect(() => {
+    (async () => {
+      try {
+        const [foods, cats] = await Promise.all([
+          searchFoods(""),
+          getFoodCategories(),
+        ]);
+        if (foods.length > 0) setFoodList(foods);
+        if (cats.length > 0) setCategories(cats);
+      } catch {}
+    })();
+  }, []);
+
   // Filtrage combiné
-  const list = FOODS.filter((f) => {
+  const list = foodList.filter((f) => {
     // Catégorie
     if (f.cat !== cat) return false;
     // Recherche texte
@@ -351,8 +368,7 @@ export function CatalogueScreen({ go, openFood, profile: propProfile }) {
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={{ paddingHorizontal: 20, gap: 6 }}
-      >
-        {CATEGORIES.map((c) => {
+      >          {categories.map((c) => {
           const active = cat === c;
           return (
             <Pressable

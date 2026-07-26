@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { View, Text, Pressable, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
@@ -6,10 +7,25 @@ import { C, FONTS } from "../constant/theme";
 import { TopBar } from "../components/TopBar";
 import { StatusBadge } from "../components/StatusBadge";
 import { USER, FOODS } from "../data/mockData";
+import { getProfile, getFoodDetails } from "../services/tomadyBridge";
 
 export function FoodDetailScreen({ food, go, profile: propProfile }) {
-  const p = propProfile || USER;
-  const f = food || FOODS[0];
+  const [p, setP] = useState(propProfile || USER);
+  const [f, setF] = useState(food || FOODS[0]);
+
+  // Charger les données depuis le bridge au montage
+  useEffect(() => {
+    (async () => {
+      try {
+        const [profile, details] = await Promise.all([
+          getProfile(),
+          food ? getFoodDetails(food.id) : null,
+        ]);
+        if (profile) setP(profile);
+        if (details?.food) setF(details.food);
+      } catch {}
+    })();
+  }, [food]);
   const isGood = f.status === "good";
 
   return (

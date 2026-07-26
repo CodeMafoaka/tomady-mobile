@@ -1,10 +1,11 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { View, Text, Pressable, ScrollView, Animated } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { Bell, Beef, Wheat, Droplet, Sparkles, UtensilsCrossed, ChevronRight } from "lucide-react-native";
 import { C, FONTS } from "../constant/theme";
 import { USER } from "../data/mockData";
+import { getProfile, getDailySummary } from "../services/tomadyBridge";
 
 /* ───────────────────────────────────────────
    FadeIn — animation d'entrée stagger
@@ -68,9 +69,32 @@ function MacroRow({ label, consumed, goal, color, Icon }) {
    DashboardScreen
    ─────────────────────────────────────────── */
 export function DashboardScreen({ go, profile: propProfile, meals: propMeals }) {
-  const p = propProfile || USER;
+  const [localProfile, setLocalProfile] = useState(propProfile || USER);
   const todayMeals = propMeals || [];
-  const pct = Math.min(1, (p.caloriesConsumed || 0) / Math.max(1, p.calorieGoal));
+
+  // Charger le profil depuis le bridge au montage
+  useEffect(() => {
+    (async () => {
+      try {
+        const bp = await getProfile();
+        if (bp && bp.firstName) {
+          // Charger le résumé du jour
+          const today = new Date().toISOString().split('T')[0];
+          const summary = await getDailySummary(today);
+          setLocalProfile({
+            ...bp,
+            caloriesConsumed: summary?.calories ?? bp.caloriesConsumed ?? 0,
+            protein: { ...bp.protein, consumed: summary?.protein.consumed ?? bp.protein?.consumed ?? 0 },
+            carbs: { ...bp.carbs, consumed: summary?.carbs.consumed ?? bp.carbs?.consumed ?? 0 },
+            fat: { ...bp.fat, consumed: summary?.fat.consumed ?? bp.fat?.consumed ?? 0 },
+          });
+        }
+      } catch {}
+    })();
+  }, []);
+
+  const p = propProfile || localProfile;
+  const pct = Math.min(1, (p.caloriesConsumed || 0) / Math.max(1, p.calorieGoal || 2000));
   const remaining = Math.max(0, (p.calorieGoal || 2000) - (p.caloriesConsumed || 0));
 
   const macros = [

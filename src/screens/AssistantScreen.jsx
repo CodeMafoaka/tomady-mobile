@@ -37,6 +37,7 @@ export function AssistantScreen({ openVoice, addMeal }) {
     await addChatMessage({ role: "user", text_content: text });
 
     try {
+      // Utiliser le bridge Tomady (GemmaModule natif si disponible, sinon mock)
       const result = await analyzeMealText(text);
       const aiMsg = { from: "ai", text: result.text, card: result.card };
       setMessages((prev) => [...prev, aiMsg]);

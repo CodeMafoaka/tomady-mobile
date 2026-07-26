@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { View, Text, Pressable, ScrollView, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
@@ -6,6 +7,7 @@ import { C } from "../constant/theme";
 import { TopBar } from "../components/TopBar";
 import { GrowthRing } from "../components/GrowthRing";
 import { USER } from "../data/mockData";
+import { getProfile } from "../services/tomadyBridge";
 
 const SETTINGS_ROWS = [
   { label: "Préférences alimentaires", icon: User, danger: false },
@@ -16,7 +18,19 @@ const SETTINGS_ROWS = [
 ];
 
 export function ProfileScreen({ go, profile: propProfile }) {
-  const p = propProfile || USER;
+  const [localP, setLocalP] = useState(propProfile || USER);
+
+  // Charger le profil depuis le bridge au montage
+  useEffect(() => {
+    (async () => {
+      try {
+        const bp = await getProfile();
+        if (bp && bp.firstName) setLocalP(bp);
+      } catch {}
+    })();
+  }, []);
+
+  const p = propProfile || localP;
   const activityLabel = p.activityLevel
     ? p.activityLevel.charAt(0).toUpperCase() + p.activityLevel.slice(1)
     : "Actif";
