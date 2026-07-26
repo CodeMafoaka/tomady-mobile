@@ -247,6 +247,32 @@ export async function logMeal(meal: {
  * Récupère les repas pour une date donnée.
  */
 export async function getMealsForDate(dateStr: string): Promise<any[]> {
+  // Try native bridge first
+  if (hasNativeBridge) {
+    try {
+      const history = await getDiet().getDishHistory("user-1", dateStr);
+      if (history && history.length > 0) {
+        return history.map((h: any) => ({
+          id: h.id ?? h.historyId ?? Math.random(),
+          name: h.dishName ?? h.name ?? h.notes ?? "Repas",
+          kcal: h.kcal ?? h.calories ?? 0,
+          protein_g: h.proteinG ?? h.protein ?? 0,
+          carbs_g: h.carbsG ?? h.carbs ?? 0,
+          fat_g: h.fatG ?? h.fat ?? 0,
+          status: h.status ?? "eaten",
+          meal_type: h.mealType ?? "Repas",
+          feeling: h.feeling ?? null,
+          date: h.date ?? dateStr,
+          time: h.time ?? null,
+          meal_order: h.mealOrder ?? 0,
+        }));
+      }
+    } catch {
+      // Fall through to SQLite
+    }
+  }
+
+  // Fallback: SQLite
   try {
     return await DB.getMealsForDate(dateStr);
   } catch {
@@ -366,7 +392,153 @@ export async function validateDish(
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// SECTION 4 — AI Assistant (→ GemmaModule)
+// SECTION 4 — Bio Records (→ DietModule)
+// ═══════════════════════════════════════════════════════════════════
+
+/**
+ * Enregistre un relevé biométrique (poids, graisse, tension).
+ */
+export async function recordBio(bio: {
+  date?: string;
+  weightKg?: number;
+  bodyFatPercentage?: number;
+  systolicBp?: number;
+  diastolicBp?: number;
+  notes?: string;
+}): Promise<void> {
+  if (hasNativeBridge) {
+    try {
+      await getDiet().recordBio(
+        "user-1",
+        bio.date ?? new Date().toISOString().split("T")[0],
+        bio.weightKg ?? null,
+        bio.bodyFatPercentage ?? null,
+        bio.systolicBp ?? null,
+        bio.diastolicBp ?? null,
+        bio.notes ?? null,
+      );
+    } catch (e) {
+      console.warn("Failed to record bio to native backend:", e);
+    }
+  }
+}
+
+/**
+ * Récupère le relevé biométrique pour une date.
+ */
+export async function getBioRecord(date: string): Promise<any | null> {
+  if (hasNativeBridge) {
+    try {
+      return await getDiet().getBioRecord("user-1", date);
+    } catch {
+      // Fall through
+    }
+  }
+  return null;
+}
+
+/**
+ * Récupère les relevés biométriques dans un intervalle de dates.
+ */
+export async function getBioRecordsInRange(
+  startDate: string,
+  endDate: string,
+): Promise<any[]> {
+  if (hasNativeBridge) {
+    try {
+      return (await getDiet().getBioRecordsInRange("user-1", startDate, endDate)) ?? [];
+    } catch {
+      // Fall through
+    }
+  }
+  return [];
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// SECTION 5 — Dishes & Recipes (→ DietModule)
+// ═══════════════════════════════════════════════════════════════════
+
+/**
+ * Crée un plat dans la base de données.
+ */
+export async function createDish(
+  name: string,
+  description?: string,
+  category?: string,
+): Promise<any | null> {
+  if (hasNativeBridge) {
+    try {
+      return await getDiet().createDish(name, description ?? null, category ?? null);
+    } catch {
+      // Fall through
+    }
+  }
+  return null;
+}
+
+/**
+ * Recherche des plats par nom.
+ */
+export async function searchDishes(query: string): Promise<any[]> {
+  if (hasNativeBridge) {
+    try {
+      return (await getDiet().searchDishes(query)) ?? [];
+    } catch {
+      // Fall through
+    }
+  }
+  return [];
+}
+
+/**
+ * Récupère le plan nutritionnel quotidien.
+ */
+export async function getDailyPlan(): Promise<any | null> {
+  if (hasNativeBridge) {
+    try {
+      return await getDiet().getDailyPlan("user-1");
+    } catch {
+      // Fall through
+    }
+  }
+  return null;
+}
+
+/**
+ * Récupère l'historique des repas sur un intervalle de dates.
+ */
+export async function getHistoryInRange(
+  startDate: string,
+  endDate: string,
+): Promise<any[]> {
+  if (hasNativeBridge) {
+    try {
+      return (await getDiet().getHistoryInRange("user-1", startDate, endDate)) ?? [];
+    } catch {
+      // Fall through
+    }
+  }
+  return [];
+}
+
+/**
+ * Calcule la nutrition d'un plat.
+ */
+export async function getDishNutrition(
+  dishId: string,
+): Promise<any | null> {
+  if (hasNativeBridge) {
+    try {
+      return await getDiet().getDishNutrition(dishId);
+    } catch {
+      // Fall through
+    }
+  }
+  return null;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// SECTION 6 — AI Assistant (→ GemmaModule)
 // ═══════════════════════════════════════════════════════════════════
 
 /**
@@ -705,7 +877,7 @@ export function startStreamingSession(
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// SECTION 5 — Alerts / Notifications
+// SECTION 7 — Alerts / Notifications
 // ═══════════════════════════════════════════════════════════════════
 
 /**

@@ -27,7 +27,7 @@ import { BottomNav } from "../components/BottomNav";
 import { Toast } from "../components/Toast";
 import { C } from "../constant/theme";
 import { FOODS } from "../data/mockData";
-import { getProfile, getMealsForDate } from "../services/tomadyBridge";
+import { getProfile, getMealsForDate, saveProfile } from "../services/tomadyBridge";
 import { AlertsScreen } from "../screens/AlertsScreen";
 import { AssistantScreen } from "../screens/AssistantScreen";
 import { CatalogueScreen } from "../screens/CatalogueScreen";
@@ -198,6 +198,12 @@ export default function App() {
   const updateProfile = async (newProfile) => {
     setProfile(newProfile);
     await saveUser(newProfile);
+    // Sync to native backend
+    try {
+      await saveProfile(newProfile);
+    } catch (e) {
+      console.warn("Failed to sync profile to native backend:", e);
+    }
   };
 
   const showToast = (message) => {

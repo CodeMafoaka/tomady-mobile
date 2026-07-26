@@ -5,7 +5,8 @@ import { ChevronLeft, ChevronRight, Smile, Meh, Frown, Plus, Trash2, UtensilsCro
 import { C } from "../constant/theme";
 import { TopBar } from "../components/TopBar";
 import { StatusBadge } from "../components/StatusBadge";
-import { getMealsForDate, updateMealFeeling, deleteMealEntry } from "../services/database";
+import { getMealsForDate } from "../services/tomadyBridge";
+import { updateMealFeeling, deleteMealEntry } from "../services/database";
 
 const DAYS = ["Hier", "Aujourd'hui", "Demain"];
 const FEELINGS = [
