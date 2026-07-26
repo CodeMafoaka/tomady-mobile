@@ -6,7 +6,7 @@ import { Sparkles, Send, Mic, Check } from "lucide-react-native";
 import { C, FONTS } from "../constant/theme";
 import { SUGGESTIONS } from "../data/mockData";
 import { AIStatusBadge } from "../components/AIStatusBadge";
-import { analyzeMealText, getModelStatus } from "../services/aiService";
+import { getModelStatus, startStreamingSession, analyzeMeal } from "../services/tomadyBridge";
 import { getChatMessages, addChatMessage } from "../services/database";
 
 export function AssistantScreen({ openVoice, addMeal }) {
@@ -14,7 +14,9 @@ export function AssistantScreen({ openVoice, addMeal }) {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [savedCards, setSavedCards] = useState({});
+  const [streamingText, setStreamingText] = useState("");
   const scrollRef = useRef(null);
+  const streamCleanupRef = useRef(null);
 
   // Charger l'historique au montage
   useEffect(() => {
@@ -22,44 +24,87 @@ export function AssistantScreen({ openVoice, addMeal }) {
       const saved = await getChatMessages();
       if (saved.length > 0) setMessages(saved);
     })();
+    // Cleanup streaming on unmount
+    return () => {
+      streamCleanupRef.current?.();
+    };
   }, []);
 
   const send = async (textOverride) => {
     const text = (textOverride ?? input).trim();
     if (!text || loading) return;
 
+    // Cancel any existing stream
+    streamCleanupRef.current?.();
+
     const userMsg = { from: "user", text };
     setMessages((prev) => [...prev, userMsg]);
     setInput("");
     setLoading(true);
+    setStreamingText("");
 
     // Sauvegarder le message utilisateur dans SQLite
     await addChatMessage({ role: "user", text_content: text });
 
     try {
-      // Utiliser le bridge Tomady (GemmaModule natif si disponible, sinon mock)
-      const result = await analyzeMealText(text);
-      const aiMsg = { from: "ai", text: result.text, card: result.card };
-      setMessages((prev) => [...prev, aiMsg]);
+      // Utiliser le vrai streaming Gemma 4 via le bridge natif
+      let fullResponse = "";
+      let card = null;
 
-      // Sauvegarder la réponse IA dans SQLite
-      await addChatMessage({
-        role: "assistant",
-        text_content: result.text,
-        card_kcal: result.card?.kcal ?? null,
-        card_p: result.card?.p ?? null,
-        card_c: result.card?.c ?? null,
-        card_f: result.card?.f ?? null,
-        card_note: result.card?.note || null,
-      });
+      streamCleanupRef.current = startStreamingSession(
+        text,
+        // onToken: chaque token reçu du modèle
+        (token) => {
+          fullResponse += token;
+          setStreamingText(fullResponse);
+          // Auto-scroll pendant le streaming
+          requestAnimationFrame(() => scrollRef.current?.scrollToEnd({ animated: true }));
+        },
+        // onComplete: streaming terminé
+        async (completeText) => {
+          // Analyser la réponse pour extraire la card nutritionnelle si applicable
+          try {
+            const analysis = await analyzeMeal(text);
+            card = analysis.card;
+          } catch {}
+
+          const aiMsg = { from: "ai", text: completeText, card };
+          setMessages((prev) => [...prev, aiMsg]);
+          setStreamingText("");
+          setLoading(false);
+          streamCleanupRef.current = null;
+
+          // Sauvegarder la réponse IA dans SQLite
+          await addChatMessage({
+            role: "assistant",
+            text_content: completeText,
+            card_kcal: card?.kcal ?? null,
+            card_p: card?.p ?? null,
+            card_c: card?.c ?? null,
+            card_f: card?.f ?? null,
+            card_note: card?.note || null,
+          });
+
+          requestAnimationFrame(() => scrollRef.current?.scrollToEnd({ animated: true }));
+        },
+        // onError
+        async (error) => {
+          const errMsg = "Désolé, une erreur est survenue pendant l'analyse. Réessayez.";
+          setMessages((prev) => [...prev, { from: "ai", text: errMsg }]);
+          setStreamingText("");
+          setLoading(false);
+          streamCleanupRef.current = null;
+
+          await addChatMessage({ role: "assistant", text_content: errMsg });
+        }
+      );
     } catch (e) {
       const errMsg = "Désolé, une erreur est survenue pendant l'analyse. Réessayez.";
       setMessages((prev) => [...prev, { from: "ai", text: errMsg }]);
+      setStreamingText("");
+      setLoading(false);
 
       await addChatMessage({ role: "assistant", text_content: errMsg });
-    } finally {
-      setLoading(false);
-      requestAnimationFrame(() => scrollRef.current?.scrollToEnd({ animated: true }));
     }
   };
 
@@ -140,12 +185,25 @@ export function AssistantScreen({ openVoice, addMeal }) {
             </View>
           )
         )}
-        {loading && (
+        {/* ── Streaming en cours (tokens en temps réel) ── */}
+        {loading && streamingText ? (
+          <View className="self-start" style={{ maxWidth: "88%" }}>
+            <View
+              className="rounded-[16px] rounded-bl-[4px] border px-[15px] py-[11px]"
+              style={{ backgroundColor: C.card, borderColor: C.violet + "40" }}
+            >
+              <Text className="text-[13.5px] leading-[20px]" style={{ color: C.inkSoft }}>
+                {streamingText}
+                <Text style={{ color: C.violet }}>▊</Text>
+              </Text>
+            </View>
+          </View>
+        ) : loading ? (
           <View className="self-start flex-row items-center rounded-[16px] rounded-bl-[4px] border px-[15px] py-[11px]" style={{ backgroundColor: C.card, borderColor: C.line, gap: 8 }}>
             <ActivityIndicator size="small" color={C.violet} />
-            <Text className="text-[12.5px]" style={{ color: C.muted }}>Analyse en cours...</Text>
+            <Text className="text-[12.5px]" style={{ color: C.muted }}>Gemba 4 réfléchit...</Text>
           </View>
-        )}
+        ) : null}
       </ScrollView>
       </View>
 

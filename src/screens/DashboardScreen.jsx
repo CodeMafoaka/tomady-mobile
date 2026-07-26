@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from "react";
-import { View, Text, Pressable, ScrollView, Animated } from "react-native";
+import { View, Text, Pressable, ScrollView, Animated, ActivityIndicator } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { Bell, Beef, Wheat, Droplet, Sparkles, UtensilsCrossed, ChevronRight } from "lucide-react-native";
 import { C, FONTS } from "../constant/theme";
 import { USER } from "../data/mockData";
-import { getProfile, getDailySummary } from "../services/tomadyBridge";
+import { getProfile, getDailySummary, getDailyInsight } from "../services/tomadyBridge";
 
 /* ───────────────────────────────────────────
    FadeIn — animation d'entrée stagger
@@ -70,9 +70,11 @@ function MacroRow({ label, consumed, goal, color, Icon }) {
    ─────────────────────────────────────────── */
 export function DashboardScreen({ go, profile: propProfile, meals: propMeals }) {
   const [localProfile, setLocalProfile] = useState(propProfile || USER);
+  const [insight, setInsight] = useState(null);
+  const [insightLoading, setInsightLoading] = useState(false);
   const todayMeals = propMeals || [];
 
-  // Charger le profil depuis le bridge au montage
+  // Charger le profil et l'insight IA au montage
   useEffect(() => {
     (async () => {
       try {
@@ -81,13 +83,35 @@ export function DashboardScreen({ go, profile: propProfile, meals: propMeals }) 
           // Charger le résumé du jour
           const today = new Date().toISOString().split('T')[0];
           const summary = await getDailySummary(today);
-          setLocalProfile({
+          const updatedProfile = {
             ...bp,
             caloriesConsumed: summary?.calories ?? bp.caloriesConsumed ?? 0,
             protein: { ...bp.protein, consumed: summary?.protein.consumed ?? bp.protein?.consumed ?? 0 },
             carbs: { ...bp.carbs, consumed: summary?.carbs.consumed ?? bp.carbs?.consumed ?? 0 },
             fat: { ...bp.fat, consumed: summary?.fat.consumed ?? bp.fat?.consumed ?? 0 },
-          });
+          };
+          setLocalProfile(updatedProfile);
+
+          // Générer l'insight IA dynamique
+          setInsightLoading(true);
+          try {
+            const insightResult = await getDailyInsight({
+              totalCalories: updatedProfile.caloriesConsumed || 0,
+              calorieGoal: updatedProfile.calorieGoal || 2000,
+              totalProtein: updatedProfile.protein?.consumed || 0,
+              proteinGoal: updatedProfile.protein?.goal || 120,
+              totalCarbs: updatedProfile.carbs?.consumed || 0,
+              carbsGoal: updatedProfile.carbs?.goal || 220,
+              totalFat: updatedProfile.fat?.consumed || 0,
+              fatGoal: updatedProfile.fat?.goal || 65,
+              mealCount: todayMeals.length,
+            });
+            setInsight(insightResult);
+          } catch {
+            setInsight({ text: "Impossible de générer l'insight pour le moment.", category: "error" });
+          } finally {
+            setInsightLoading(false);
+          }
         }
       } catch {}
     })();
@@ -347,7 +371,7 @@ export function DashboardScreen({ go, profile: propProfile, meals: propMeals }) 
               </View>
             </FadeInView>
 
-            {/* ──────── AI Insight ──────── */}
+            {/* ──────── AI Insight (Gemma 4 dynamique) ──────── */}
             <FadeInView delay={350}>
               <View
                 className="overflow-hidden rounded-[20px]"
@@ -361,7 +385,7 @@ export function DashboardScreen({ go, profile: propProfile, meals: propMeals }) 
                 }}
               >
                 <LinearGradient
-                  colors={[C.greenTint, C.white]}
+                  colors={[C.violetTint, C.white]}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 1 }}
                   className="flex-row"
@@ -369,24 +393,35 @@ export function DashboardScreen({ go, profile: propProfile, meals: propMeals }) 
                 >
                   <View
                     className="h-[36px] w-[36px] items-center justify-center rounded-full"
-                    style={{ backgroundColor: C.green }}
+                    style={{ backgroundColor: C.violet }}
                   >
                     <Sparkles size={16} color={C.white} />
                   </View>
                   <View className="flex-1" style={{ gap: 6 }}>
                     <Text
                       className="text-[11px] font-extrabold uppercase tracking-[0.8px]"
-                      style={{ color: C.greenDeep }}
+                      style={{ color: C.violetDeep }}
                     >
-                      Insight Tomady
+                      Insight Gemma 4
                     </Text>
-                    <Text
-                      style={{ fontFamily: FONTS.displayItalic, color: C.inkSoft }}
-                      className="text-[13px] leading-[22px]"
-                    >
-                      "Vous avez consommé moins de protéines que votre objectif aujourd'hui.
-                      Essayez d'ajouter une source de protéines à votre prochain repas."
-                    </Text>
+                    {insightLoading ? (
+                      <View className="flex-row items-center" style={{ gap: 8 }}>
+                        <ActivityIndicator size="small" color={C.violet} />
+                        <Text
+                          className="text-[13px]"
+                          style={{ color: C.muted }}
+                        >
+                          Analyse en cours...
+                        </Text>
+                      </View>
+                    ) : (
+                      <Text
+                        style={{ fontFamily: FONTS.displayItalic, color: C.inkSoft }}
+                        className="text-[13px] leading-[22px]"
+                      >
+                        {insight?.text || "Générez un insight personnalisé en ajoutant des repas."}
+                      </Text>
+                    )}
                   </View>
                 </LinearGradient>
               </View>

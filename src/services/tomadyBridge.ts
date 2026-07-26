@@ -504,7 +504,84 @@ export async function computeRecipe(
 }
 
 /**
- * Télécharge le modèle Gemma (~1.5 GB) avec suivi de progression.
+ * Génère un insight nutritionnel personnalisé pour le dashboard.
+ *
+ * Appelle Gemma (via le bridge natif) pour analyser le profil utilisateur
+ * et les repas du jour, et retourne un insight court et actionnable.
+ *
+ * @param mealsSummary Résumé des repas du jour (calories, macros, nombre de repas).
+ * @returns Un objet avec le texte de l'insight et sa catégorie.
+ */
+export async function getDailyInsight(mealsSummary: {
+  totalCalories: number;
+  calorieGoal: number;
+  totalProtein: number;
+  proteinGoal: number;
+  totalCarbs: number;
+  carbsGoal: number;
+  totalFat: number;
+  fatGoal: number;
+  mealCount: number;
+}): Promise<{ text: string; category: string }> {
+  if (hasNativeBridge) {
+    try {
+      const today = new Date().toISOString().split("T")[0];
+      const result = await getGemma().getDailyInsight(
+        "user-1",
+        today,
+        mealsSummary.totalCalories,
+        mealsSummary.calorieGoal,
+        mealsSummary.totalProtein,
+        mealsSummary.proteinGoal,
+        mealsSummary.totalCarbs,
+        mealsSummary.carbsGoal,
+        mealsSummary.totalFat,
+        mealsSummary.fatGoal,
+        mealsSummary.mealCount,
+      );
+      return {
+        text: result?.text ?? getDefaultInsight(mealsSummary),
+        category: result?.category ?? "general",
+      };
+    } catch {
+      // Fall through to mock
+    }
+  }
+
+  // Mock insight based on actual data
+  await new Promise((r) => setTimeout(r, 600));
+  return {
+    text: getDefaultInsight(mealsSummary),
+    category: "general",
+  };
+}
+
+/**
+ * Returns a default insight based on the meals summary data.
+ * Used as fallback when the native bridge is unavailable.
+ */
+function getDefaultInsight(meals: {
+  totalCalories: number;
+  calorieGoal: number;
+  totalProtein: number;
+  proteinGoal: number;
+  mealCount: number;
+}): string {
+  if (meals.mealCount === 0) {
+    return "Vous n'avez pas encore enregistré de repas aujourd'hui. Commencez par ajouter votre premier repas !";
+  }
+  const pct = Math.round((meals.totalCalories / meals.calorieGoal) * 100);
+  if (meals.totalProtein < meals.proteinGoal * 0.5) {
+    return `Bon début avec ${meals.totalCalories} kcal (${pct}% de l'objectif). Vos protéines sont encore faibles (${meals.totalProtein}g/${meals.proteinGoal}g) — ajoutez une source de protéines à votre prochain repas !`;
+  }
+  if (meals.totalCalories > meals.calorieGoal) {
+    return `Vous avez dépassé votre objectif calorique avec ${meals.totalCalories} kcal. Pour le reste de la journée, privilégiez les légumes et l'eau.`;
+  }
+  return `Excellent travail ! ${meals.totalCalories} kcal (${pct}%) et ${meals.totalProtein}g de protéines sur ${meals.mealCount} repas. Vous êtes sur la bonne voie !`;
+}
+
+/**
+ * Télécharge le modèle Gemma (~2 GB) avec suivi de progression.
  */
 export async function downloadModel(
   onProgress?: (progress: number) => void,
@@ -539,6 +616,92 @@ export async function downloadModel(
 
   console.warn("Native bridge not available — cannot download model");
   return null;
+}
+
+/**
+ * Start a streaming token session with Gemma.
+ * Returns a cleanup function that cancels the stream.
+ *
+ * @param query The prompt to send.
+ * @param onToken Called for each token received.
+ * @param onComplete Called when streaming is complete.
+ * @param onError Called on error.
+ * @returns A cleanup function to cancel the stream.
+ */
+export function startStreamingSession(
+  query: string,
+  onToken: (token: string) => void,
+  onComplete: (fullResponse: string) => void,
+  onError: (error: string) => void,
+): () => void {
+  if (!hasNativeBridge) {
+    // Mock streaming: simulate token-by-token
+    const mockResponse = `Analyse (mode démo) de votre demande. En mode réel, Gemma 4 générerait une réponse personnalisée basée sur votre profil nutritionnel et vos préférences alimentaires.`;
+    const tokens = mockResponse.split(" ");
+    let idx = 0;
+    let fullText = "";
+
+    const interval = setInterval(() => {
+      if (idx < tokens.length) {
+        const token = (idx < tokens.length - 1 ? tokens[idx] + " " : tokens[idx]);
+        fullText += token;
+        onToken(token);
+        idx++;
+      } else {
+        clearInterval(interval);
+        onComplete(fullText);
+      }
+    }, 80);
+
+    return () => clearInterval(interval);
+  }
+
+  // Native streaming via GemmaModule
+  const { NativeEventEmitter } = require("react-native");
+  const emitter = new NativeEventEmitter(getGemma());
+
+  let fullResponse = "";
+  let resolved = false;
+
+  const tokenSub = emitter.addListener("onGemmaToken", (event: any) => {
+    if (event.token) {
+      fullResponse += event.token;
+      onToken(event.token);
+    }
+  });
+
+  const completeSub = emitter.addListener("onGemmaStreamComplete", () => {
+    if (!resolved) {
+      resolved = true;
+      onComplete(fullResponse);
+      cleanup();
+    }
+  });
+
+  const errorSub = emitter.addListener("onGemmaStreamError", (event: any) => {
+    if (!resolved) {
+      resolved = true;
+      onError(event.error || "Streaming error");
+      cleanup();
+    }
+  });
+
+  // Start the stream
+  getGemma().startStreaming(query).catch((e: any) => {
+    if (!resolved) {
+      resolved = true;
+      onError(e?.message || "Failed to start streaming");
+      cleanup();
+    }
+  });
+
+  function cleanup() {
+    tokenSub?.remove();
+    completeSub?.remove();
+    errorSub?.remove();
+  }
+
+  return cleanup;
 }
 
 // ═══════════════════════════════════════════════════════════════════
