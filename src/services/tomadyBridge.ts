@@ -717,11 +717,8 @@ export async function analyzeMeal(
 }> {
   if (hasNativeBridge) {
     try {
-      // Ensure model is loaded
-      const status = await getGemma().getModelStatus();
-      if (!status.loaded) {
-        await getGemma().loadModel(null);
-      }
+      // Ensure real model is ready (downloads if needed)
+      await ensureModelReady();
 
       // Ask Gemma to analyze the meal
       const result = await getGemma().askQuestion(
@@ -793,6 +790,7 @@ export async function askQuestion(
 ): Promise<string> {
   if (hasNativeBridge) {
     try {
+      await ensureModelReady();
       const result = await getGemma().askQuestion(question, userId);
       return result?.answer ?? result?.rawResponse ?? question;
     } catch {
@@ -829,6 +827,7 @@ export async function computeRecipe(
 }> {
   if (hasNativeBridge) {
     try {
+      await ensureModelReady();
       const result = await getGemma().computeRecipe(prompt, userId);
       return {
         dishName: result.dishName ?? "Recette Tomady",
@@ -868,6 +867,7 @@ export async function getDailyInsight(mealsSummary: {
 }): Promise<{ text: string; category: string }> {
   if (hasNativeBridge) {
     try {
+      await ensureModelReady();
       const today = new Date().toISOString().split("T")[0];
       const result = await getGemma().getDailyInsight(
         "user-1",
@@ -962,6 +962,40 @@ export async function downloadModel(
 }
 
 /**
+ * S'assure que le modèle Gemma réel est prêt.
+ * Si le modèle est en mode mock (pas encore téléchargé), lance le téléchargement.
+ * Retourne true si le modèle réel est disponible, false si en mode mock.
+ */
+export async function ensureModelReady(
+  onProgress?: (progress: number) => void,
+): Promise<boolean> {
+  if (!hasNativeBridge) return false;
+
+  try {
+    const status = await getGemma().getModelStatus();
+    if (status.loaded && !status.usingMock) {
+      return true; // Already loaded with real model
+    }
+
+    // Model not loaded or using mock -> trigger download
+    console.log("Gemma model not ready (usingMock:", status.usingMock, "), starting download...");
+    const downloadedPath = await downloadModel(onProgress);
+    
+    if (downloadedPath) {
+      // Download succeeded, now load the model
+      await getGemma().loadModel(downloadedPath);
+      const finalStatus = await getGemma().getModelStatus();
+      return finalStatus.loaded && !finalStatus.usingMock;
+    }
+    
+    return false;
+  } catch (e) {
+    console.warn("ensureModelReady failed:", e);
+    return false;
+  }
+}
+
+/**
  * Start a streaming token session with Gemma.
  * Returns a cleanup function that cancels the stream.
  *
@@ -1047,6 +1081,13 @@ export function startStreamingSession(
   }
 
   // Native streaming via GemmaModule
+  // Ensure model is ready (downloads if needed) before streaming
+  try {
+    await ensureModelReady();
+  } catch (e) {
+    console.warn("ensureModelReady failed in streaming:", e);
+  }
+
   const { NativeEventEmitter } = require("react-native");
   const emitter = new NativeEventEmitter(getGemma());
 
