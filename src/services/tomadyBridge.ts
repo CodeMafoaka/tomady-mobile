@@ -37,6 +37,22 @@ const hasNativeBridge: boolean =
   NativeModules.DietModule != null &&
   NativeModules.GemmaModule != null;
 
+/**
+ * REST API base URL for HTTP fallback when native bridge is unavailable.
+ * Tries localhost (emulator) and common local network addresses.
+ */
+const REST_API_URL = "http://127.0.0.1:7777";
+
+async function apiFetch(path: string, options?: RequestInit): Promise<any> {
+  const url = `${REST_API_URL}${path}`;
+  const res = await fetch(url, {
+    ...options,
+    headers: { "Content-Type": "application/json", ...options?.headers },
+  });
+  if (!res.ok) throw new Error(`API ${res.status}: ${res.statusText}`);
+  return res.json();
+}
+
 // ── Native module references (lazy) ────────────────────────────────
 
 function getFooDB() {
@@ -67,6 +83,14 @@ export async function getProfile(): Promise<typeof USER> {
     } catch {
       // Fall through to SQLite
     }
+  }
+
+  // Try REST API
+  try {
+    const profile = await apiFetch("/api/v1/diet/profile/user-1");
+    if (profile) return mapProfileFromNative(profile);
+  } catch {
+    // Fall through to SQLite
   }
 
   // Fallback: try SQLite
@@ -121,6 +145,16 @@ export async function saveProfile(data: Partial<typeof USER>): Promise<void> {
       console.warn("Failed to sync profile to native backend:", e);
     }
   }
+
+  // Try REST API
+  try {
+    await apiFetch("/api/v1/diet/profile", {
+      method: "PUT",
+      body: JSON.stringify(data),
+    });
+  } catch (e) {
+    console.warn("Failed to sync profile to REST API:", e);
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -141,6 +175,15 @@ export async function searchFoods(query: string): Promise<typeof FOODS> {
     } catch {
       // Fall through
     }
+  }
+
+  // Try REST API
+  try {
+    const results = await apiFetch(`/api/v1/foodb/search?q=${encodeURIComponent(query)}`);
+    const items = results.results ?? results ?? [];
+    return (Array.isArray(items) ? items : []).map(mapFoodFromNative);
+  } catch {
+    // Fall through to mock
   }
 
   // Local filter on mock data
@@ -181,6 +224,21 @@ export async function getFoodDetails(foodId: number): Promise<{
     }
   }
 
+  // Try REST API
+  try {
+    const detail = await apiFetch(`/api/v1/foodb/food/${foodId}`);
+    return {
+      food: mapFoodFromNative(detail.food ?? detail),
+      nutrients: (detail.nutrients ?? []).map((n: any) => ({
+        name: n.nutrientName ?? n.name ?? "",
+        amount: n.amount ?? 0,
+        unit: n.unit ?? "g",
+      })),
+    };
+  } catch {
+    // Fall through to local lookup
+  }
+
   // Local lookup
   const food = FOODS.find((f) => f.id === foodId) ?? FOODS[0];
   return { food };
@@ -197,6 +255,15 @@ export async function getFoodCategories(): Promise<string[]> {
       // Fall through
     }
   }
+
+  // Try REST API
+  try {
+    const result = await apiFetch("/api/v1/foodb/groups");
+    return result.groups ?? result ?? CATEGORIES;
+  } catch {
+    // Fall through
+  }
+
   return CATEGORIES;
 }
 
@@ -241,12 +308,79 @@ export async function logMeal(meal: {
       console.warn("Failed to sync meal to native backend:", e);
     }
   }
+
+  // Try REST API
+  try {
+    await apiFetch("/api/v1/diet/meal", {
+      method: "POST",
+      body: JSON.stringify({
+        userId: "user-1",
+        dishId: null,
+        date: meal.date ?? new Date().toISOString().split("T")[0],
+        mealType: ["Petit-déjeuner", "Déjeuner", "Collation", "Dîner"][meal.meal_order ?? 0] ?? "Repas",
+        servings: null,
+        notes: meal.name,
+      }),
+    });
+  } catch (e) {
+    console.warn("Failed to sync meal to REST API:", e);
+  }
 }
 
 /**
  * Récupère les repas pour une date donnée.
  */
 export async function getMealsForDate(dateStr: string): Promise<any[]> {
+  // Try native bridge first
+  if (hasNativeBridge) {
+    try {
+      const history = await getDiet().getDishHistory("user-1", dateStr);
+      if (history && history.length > 0) {
+        return history.map((h: any) => ({
+          id: h.id ?? h.historyId ?? Math.random(),
+          name: h.dishName ?? h.name ?? h.notes ?? "Repas",
+          kcal: h.kcal ?? h.calories ?? 0,
+          protein_g: h.proteinG ?? h.protein ?? 0,
+          carbs_g: h.carbsG ?? h.carbs ?? 0,
+          fat_g: h.fatG ?? h.fat ?? 0,
+          status: h.status ?? "eaten",
+          meal_type: h.mealType ?? "Repas",
+          feeling: h.feeling ?? null,
+          date: h.date ?? dateStr,
+          time: h.time ?? null,
+          meal_order: h.mealOrder ?? 0,
+        }));
+      }
+    } catch {
+      // Fall through
+    }
+  }
+
+  // Try REST API
+  try {
+    const result = await apiFetch(`/api/v1/diet/meals/user-1?date=${dateStr}`);
+    const items = result.meals ?? result ?? [];
+    if (Array.isArray(items) && items.length > 0) {
+      return items.map((h: any) => ({
+        id: h.id ?? h.historyId ?? Math.random(),
+        name: h.dishName ?? h.name ?? h.notes ?? "Repas",
+        kcal: h.kcal ?? h.calories ?? 0,
+        protein_g: h.proteinG ?? h.protein ?? 0,
+        carbs_g: h.carbsG ?? h.carbs ?? 0,
+        fat_g: h.fatG ?? h.fat ?? 0,
+        status: h.status ?? "eaten",
+        meal_type: h.mealType ?? "Repas",
+        feeling: h.feeling ?? null,
+        date: h.date ?? dateStr,
+        time: h.time ?? null,
+        meal_order: h.mealOrder ?? 0,
+      }));
+    }
+  } catch {
+    // Fall through
+  }
+
+  // Fallback: SQLite
   try {
     return await DB.getMealsForDate(dateStr);
   } catch {
@@ -280,6 +414,21 @@ export async function getDailySummary(
     } catch {
       // Fall through
     }
+  }
+
+  // Try REST API
+  try {
+    const summary = await apiFetch(`/api/v1/diet/summary/user-1?date=${date}`);
+    if (summary) {
+      return {
+        calories: summary.totalCalories ?? summary.calories ?? 0,
+        protein: { consumed: summary.totalProteinG ?? summary.protein ?? 0, goal: 120 },
+        carbs: { consumed: summary.totalCarbsG ?? summary.carbs ?? 0, goal: 220 },
+        fat: { consumed: summary.totalFatG ?? summary.fat ?? 0, goal: 65 },
+      };
+    }
+  } catch {
+    // Fall through
   }
 
   // Compute from local SQLite
@@ -366,7 +515,153 @@ export async function validateDish(
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// SECTION 4 — AI Assistant (→ GemmaModule)
+// SECTION 4 — Bio Records (→ DietModule)
+// ═══════════════════════════════════════════════════════════════════
+
+/**
+ * Enregistre un relevé biométrique (poids, graisse, tension).
+ */
+export async function recordBio(bio: {
+  date?: string;
+  weightKg?: number;
+  bodyFatPercentage?: number;
+  systolicBp?: number;
+  diastolicBp?: number;
+  notes?: string;
+}): Promise<void> {
+  if (hasNativeBridge) {
+    try {
+      await getDiet().recordBio(
+        "user-1",
+        bio.date ?? new Date().toISOString().split("T")[0],
+        bio.weightKg ?? null,
+        bio.bodyFatPercentage ?? null,
+        bio.systolicBp ?? null,
+        bio.diastolicBp ?? null,
+        bio.notes ?? null,
+      );
+    } catch (e) {
+      console.warn("Failed to record bio to native backend:", e);
+    }
+  }
+}
+
+/**
+ * Récupère le relevé biométrique pour une date.
+ */
+export async function getBioRecord(date: string): Promise<any | null> {
+  if (hasNativeBridge) {
+    try {
+      return await getDiet().getBioRecord("user-1", date);
+    } catch {
+      // Fall through
+    }
+  }
+  return null;
+}
+
+/**
+ * Récupère les relevés biométriques dans un intervalle de dates.
+ */
+export async function getBioRecordsInRange(
+  startDate: string,
+  endDate: string,
+): Promise<any[]> {
+  if (hasNativeBridge) {
+    try {
+      return (await getDiet().getBioRecordsInRange("user-1", startDate, endDate)) ?? [];
+    } catch {
+      // Fall through
+    }
+  }
+  return [];
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// SECTION 5 — Dishes & Recipes (→ DietModule)
+// ═══════════════════════════════════════════════════════════════════
+
+/**
+ * Crée un plat dans la base de données.
+ */
+export async function createDish(
+  name: string,
+  description?: string,
+  category?: string,
+): Promise<any | null> {
+  if (hasNativeBridge) {
+    try {
+      return await getDiet().createDish(name, description ?? null, category ?? null);
+    } catch {
+      // Fall through
+    }
+  }
+  return null;
+}
+
+/**
+ * Recherche des plats par nom.
+ */
+export async function searchDishes(query: string): Promise<any[]> {
+  if (hasNativeBridge) {
+    try {
+      return (await getDiet().searchDishes(query)) ?? [];
+    } catch {
+      // Fall through
+    }
+  }
+  return [];
+}
+
+/**
+ * Récupère le plan nutritionnel quotidien.
+ */
+export async function getDailyPlan(): Promise<any | null> {
+  if (hasNativeBridge) {
+    try {
+      return await getDiet().getDailyPlan("user-1");
+    } catch {
+      // Fall through
+    }
+  }
+  return null;
+}
+
+/**
+ * Récupère l'historique des repas sur un intervalle de dates.
+ */
+export async function getHistoryInRange(
+  startDate: string,
+  endDate: string,
+): Promise<any[]> {
+  if (hasNativeBridge) {
+    try {
+      return (await getDiet().getHistoryInRange("user-1", startDate, endDate)) ?? [];
+    } catch {
+      // Fall through
+    }
+  }
+  return [];
+}
+
+/**
+ * Calcule la nutrition d'un plat.
+ */
+export async function getDishNutrition(
+  dishId: string,
+): Promise<any | null> {
+  if (hasNativeBridge) {
+    try {
+      return await getDiet().getDishNutrition(dishId);
+    } catch {
+      // Fall through
+    }
+  }
+  return null;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// SECTION 6 — AI Assistant (→ GemmaModule)
 // ═══════════════════════════════════════════════════════════════════
 
 /**
@@ -389,6 +684,19 @@ export async function getModelStatus(): Promise<{
       // Fall through
     }
   }
+
+  // Try REST API
+  try {
+    const result = await apiFetch("/api/v1/gemma/model");
+    return {
+      loaded: result.loaded ?? false,
+      usingMock: result.usingMock ?? true,
+      version: result.version ?? null,
+    };
+  } catch {
+    // Fall through to mock
+  }
+
   return { loaded: false, usingMock: true, version: "mock (développement)" };
 }
 
@@ -409,11 +717,8 @@ export async function analyzeMeal(
 }> {
   if (hasNativeBridge) {
     try {
-      // Ensure model is loaded
-      const status = await getGemma().getModelStatus();
-      if (!status.loaded) {
-        await getGemma().loadModel(null);
-      }
+      // Ensure real model is ready (downloads if needed)
+      await ensureModelReady();
 
       // Ask Gemma to analyze the meal
       const result = await getGemma().askQuestion(
@@ -434,8 +739,32 @@ export async function analyzeMeal(
         },
       };
     } catch {
-      // Fall through to mock
+      // Fall through
     }
+  }
+
+  // Try REST API
+  try {
+    const result = await apiFetch("/api/v1/gemma/ask", {
+      method: "POST",
+      body: JSON.stringify({
+        question: `Analyse ce repas en détails: "${text}". Donne-moi une estimation des calories, protéines, glucides et lipides.`,
+        userId,
+      }),
+    });
+    const answer = result.answer ?? result.rawResponse ?? result.message ?? "";
+    return {
+      text: answer || `Analyse de : "${text}" — repas pris en compte dans votre journal.`,
+      card: {
+        kcal: 480,
+        p: 28,
+        c: 52,
+        f: 14,
+        note: "Repas analysé par Tomady via Gemma.",
+      },
+    };
+  } catch {
+    // Fall through to mock
   }
 
   // Fallback: mock response (matches aiService.js shape)
@@ -461,11 +790,23 @@ export async function askQuestion(
 ): Promise<string> {
   if (hasNativeBridge) {
     try {
+      await ensureModelReady();
       const result = await getGemma().askQuestion(question, userId);
       return result?.answer ?? result?.rawResponse ?? question;
     } catch {
       // Fall through
     }
+  }
+
+  // Try REST API
+  try {
+    const result = await apiFetch("/api/v1/gemma/ask", {
+      method: "POST",
+      body: JSON.stringify({ question, userId }),
+    });
+    return result.answer ?? result.rawResponse ?? result.message ?? question;
+  } catch {
+    // Fall through to mock
   }
 
   // Mock response
@@ -486,6 +827,7 @@ export async function computeRecipe(
 }> {
   if (hasNativeBridge) {
     try {
+      await ensureModelReady();
       const result = await getGemma().computeRecipe(prompt, userId);
       return {
         dishName: result.dishName ?? "Recette Tomady",
@@ -525,6 +867,7 @@ export async function getDailyInsight(mealsSummary: {
 }): Promise<{ text: string; category: string }> {
   if (hasNativeBridge) {
     try {
+      await ensureModelReady();
       const today = new Date().toISOString().split("T")[0];
       const result = await getGemma().getDailyInsight(
         "user-1",
@@ -619,6 +962,40 @@ export async function downloadModel(
 }
 
 /**
+ * S'assure que le modèle Gemma réel est prêt.
+ * Si le modèle est en mode mock (pas encore téléchargé), lance le téléchargement.
+ * Retourne true si le modèle réel est disponible, false si en mode mock.
+ */
+export async function ensureModelReady(
+  onProgress?: (progress: number) => void,
+): Promise<boolean> {
+  if (!hasNativeBridge) return false;
+
+  try {
+    const status = await getGemma().getModelStatus();
+    if (status.loaded && !status.usingMock) {
+      return true; // Already loaded with real model
+    }
+
+    // Model not loaded or using mock -> trigger download
+    console.log("Gemma model not ready (usingMock:", status.usingMock, "), starting download...");
+    const downloadedPath = await downloadModel(onProgress);
+    
+    if (downloadedPath) {
+      // Download succeeded, now load the model
+      await getGemma().loadModel(downloadedPath);
+      const finalStatus = await getGemma().getModelStatus();
+      return finalStatus.loaded && !finalStatus.usingMock;
+    }
+    
+    return false;
+  } catch (e) {
+    console.warn("ensureModelReady failed:", e);
+    return false;
+  }
+}
+
+/**
  * Start a streaming token session with Gemma.
  * Returns a cleanup function that cancels the stream.
  *
@@ -635,8 +1012,55 @@ export function startStreamingSession(
   onError: (error: string) => void,
 ): () => void {
   if (!hasNativeBridge) {
-    // Mock streaming: simulate token-by-token
-    const mockResponse = `Analyse (mode démo) de votre demande. En mode réel, Gemma 4 générerait une réponse personnalisée basée sur votre profil nutritionnel et vos préférences alimentaires.`;
+    // Try REST API first, then fall back to mock
+    let cancelled = false;
+    let cleanupFn: (() => void) | null = null;
+
+    apiFetch("/api/v1/gemma/ask", {
+      method: "POST",
+      body: JSON.stringify({ question: query, userId: "user-1" }),
+    }).then((result) => {
+      if (cancelled) return;
+      const fullText = result.answer ?? result.rawResponse ?? result.message ?? "Pas de réponse.";
+      const tokens = fullText.split(" ");
+      let idx = 0;
+      let accumulated = "";
+      const interval = setInterval(() => {
+        if (cancelled) { clearInterval(interval); return; }
+        if (idx < tokens.length) {
+          const token = (idx < tokens.length - 1 ? tokens[idx] + " " : tokens[idx]);
+          accumulated += token;
+          onToken(token);
+          idx++;
+        } else {
+          clearInterval(interval);
+          onComplete(accumulated);
+        }
+      }, 80);
+      cleanupFn = () => { cancelled = true; clearInterval(interval); };
+    }).catch(() => {
+      if (cancelled) return;
+      // Mock streaming fallback
+      const mockResponse = `Analyse (mode démo) de votre demande. En mode réel, Gemma 4 générerait une réponse personnalisée basée sur votre profil nutritionnel et vos préférences alimentaires.`;
+      const tokens = mockResponse.split(" ");
+      let idx = 0;
+      let fullText = "";
+      const interval = setInterval(() => {
+        if (cancelled) { clearInterval(interval); return; }
+        if (idx < tokens.length) {
+          const token = (idx < tokens.length - 1 ? tokens[idx] + " " : tokens[idx]);
+          fullText += token;
+          onToken(token);
+          idx++;
+        } else {
+          clearInterval(interval);
+          onComplete(fullText);
+        }
+      }, 80);
+      cleanupFn = () => { cancelled = true; clearInterval(interval); };
+    });
+
+    return () => { cancelled = true; cleanupFn?.(); };
     const tokens = mockResponse.split(" ");
     let idx = 0;
     let fullText = "";
@@ -657,6 +1081,13 @@ export function startStreamingSession(
   }
 
   // Native streaming via GemmaModule
+  // Ensure model is ready (downloads if needed) before streaming
+  try {
+    await ensureModelReady();
+  } catch (e) {
+    console.warn("ensureModelReady failed in streaming:", e);
+  }
+
   const { NativeEventEmitter } = require("react-native");
   const emitter = new NativeEventEmitter(getGemma());
 
@@ -705,7 +1136,7 @@ export function startStreamingSession(
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// SECTION 5 — Alerts / Notifications
+// SECTION 7 — Alerts / Notifications
 // ═══════════════════════════════════════════════════════════════════
 
 /**

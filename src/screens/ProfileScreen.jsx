@@ -8,6 +8,7 @@ import { TopBar } from "../components/TopBar";
 import { GrowthRing } from "../components/GrowthRing";
 import { USER } from "../data/mockData";
 import { getProfile } from "../services/tomadyBridge";
+import { deleteAccount as dbDeleteAccount } from "../services/database";
 
 const SETTINGS_ROWS = [
   { label: "Préférences alimentaires", icon: User, danger: false },
@@ -57,10 +58,22 @@ export function ProfileScreen({ go, profile: propProfile }) {
       case "Supprimer mon compte":
         Alert.alert(
           "Supprimer mon compte",
-          "Cette action est irréversible : toutes vos données locales (profil, historique des repas, objectifs) seront effacées.\n\nCette fonctionnalité est en cours de développement.",
+          "Cette action est irréversible : toutes vos données locales (profil, historique des repas, poids) seront effacées.\n\nVoulez-vous continuer ?",
           [
             { text: "Annuler", style: "cancel" },
-            { text: "Supprimer", style: "destructive" },
+            {
+              text: "Supprimer",
+              style: "destructive",
+              onPress: async () => {
+                try {
+                  await dbDeleteAccount();
+                  setLocalP({});
+                  go?.("welcome");
+                } catch (e) {
+                  Alert.alert("Erreur", "Impossible de supprimer les données.");
+                }
+              },
+            },
           ],
         );
         break;

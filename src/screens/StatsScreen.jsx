@@ -9,6 +9,7 @@ import { TopBar } from "../components/TopBar";
 import { Blob } from "../components/Blob";
 import { USER } from "../data/mockData";
 import { getWeightEntriesSince, addWeightEntry } from "../services/database";
+import { recordBio } from "../services/tomadyBridge";
 
 const RANGES = ["7j", "30j", "3m", "1a"];
 const RANGE_DAYS = { "7j": 7, "30j": 30, "3m": 90, "1a": 365 };
@@ -84,6 +85,8 @@ export function StatsScreen({ profile: propProfile }) {
     setSaving(true);
     try {
       await addWeightEntry(kg);
+      // Sync weight to native backend
+      await recordBio({ weightKg: kg, date: new Date().toISOString().split("T")[0] });
       setWeightInput("");
       await loadWeights(range);
     } finally {
