@@ -37,12 +37,12 @@ interface BlobConfig {
   scaleAmplitude: number; // Amplitude de pulsation propre au blob
 }
 
-// Palette inspirée de la recherche visuelle Pinterest : rouges, roses chauds, magentas et orange vibrant
+// Palette Tomady : vert signature + violet assistant → fusion organique
 const BLOBS: BlobConfig[] = [
-  { color: "#ff2a5f", radiusRatio: 0.32, orbitRatio: 0.28, phase: 0.0, freq: 1.0, scaleAmplitude: 0.08 },
-  { color: "#ff6b00", radiusRatio: 0.28, orbitRatio: 0.24, phase: 2.1, freq: 1.2, scaleAmplitude: 0.12 },
-  { color: "#e0004d", radiusRatio: 0.35, orbitRatio: 0.22, phase: 4.2, freq: 0.85, scaleAmplitude: 0.06 },
-  { color: "#ff94b8", radiusRatio: 0.25, orbitRatio: 0.30, phase: 3.15, freq: 1.4, scaleAmplitude: 0.10 },
+  { color: "#2ECC71", radiusRatio: 0.34, orbitRatio: 0.26, phase: 0.0, freq: 1.0, scaleAmplitude: 0.09 },
+  { color: "#8B5CF6", radiusRatio: 0.30, orbitRatio: 0.22, phase: 2.1, freq: 1.15, scaleAmplitude: 0.13 },
+  { color: "#1E8449", radiusRatio: 0.36, orbitRatio: 0.20, phase: 4.2, freq: 0.8, scaleAmplitude: 0.07 },
+  { color: "#A78BFA", radiusRatio: 0.26, orbitRatio: 0.28, phase: 3.15, freq: 1.35, scaleAmplitude: 0.11 },
 ];
 
 /* Un blob individuel avec trajectoire elliptique et respiration (scale) */

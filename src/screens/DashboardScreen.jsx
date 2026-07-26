@@ -364,8 +364,8 @@ export function DashboardScreen({ go, profile: propProfile, meals: propMeals }) 
                   colors={[C.greenTint, C.white]}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 1 }}
-                  className="flex-row p-[18px]"
-                  style={{ gap: 12 }}
+                  className="flex-row"
+                  style={{ gap: 16, paddingVertical: 24, paddingHorizontal: 24 }}
                 >
                   <View
                     className="h-[36px] w-[36px] items-center justify-center rounded-full"
@@ -373,7 +373,7 @@ export function DashboardScreen({ go, profile: propProfile, meals: propMeals }) 
                   >
                     <Sparkles size={16} color={C.white} />
                   </View>
-                  <View className="flex-1">
+                  <View className="flex-1" style={{ gap: 6 }}>
                     <Text
                       className="text-[11px] font-extrabold uppercase tracking-[0.8px]"
                       style={{ color: C.greenDeep }}
@@ -382,7 +382,7 @@ export function DashboardScreen({ go, profile: propProfile, meals: propMeals }) 
                     </Text>
                     <Text
                       style={{ fontFamily: FONTS.displayItalic, color: C.inkSoft }}
-                      className="mt-[6px] text-[13px] leading-[20px]"
+                      className="text-[13px] leading-[22px]"
                     >
                       "Vous avez consommé moins de protéines que votre objectif aujourd'hui.
                       Essayez d'ajouter une source de protéines à votre prochain repas."
