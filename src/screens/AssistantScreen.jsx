@@ -15,14 +15,17 @@ export function AssistantScreen({ openVoice, addMeal }) {
   const [loading, setLoading] = useState(false);
   const [savedCards, setSavedCards] = useState({});
   const [streamingText, setStreamingText] = useState("");
+  const [modelStatus, setModelStatus] = useState("loading");
   const scrollRef = useRef(null);
   const streamCleanupRef = useRef(null);
 
-  // Charger l'historique au montage
+  // Charger l'historique et le statut du modèle au montage
   useEffect(() => {
     (async () => {
       const saved = await getChatMessages();
       if (saved.length > 0) setMessages(saved);
+      const status = await getModelStatus();
+      setModelStatus(status.loaded ? "ready" : status.usingMock ? "ready" : "unavailable");
     })();
     // Cleanup streaming on unmount
     return () => {
@@ -130,7 +133,7 @@ export function AssistantScreen({ openVoice, addMeal }) {
           </Text>
           <Text className="text-[11.5px]" style={{ color: C.muted }}>Votre intelligence nutritionnelle personnelle</Text>
         </View>
-        <AIStatusBadge status={getModelStatus()} />
+        <AIStatusBadge status={modelStatus} />
       </View>
 
       <View className="flex-1">
