@@ -41,7 +41,7 @@ const hasNativeBridge: boolean =
  * REST API base URL for HTTP fallback when native bridge is unavailable.
  * Tries localhost (emulator) and common local network addresses.
  */
-const REST_API_URL = "http://192.168.10.70:7777";
+const REST_API_URL = "http://127.0.0.1:7777";
 
 async function apiFetch(path: string, options?: RequestInit): Promise<any> {
   const url = `${REST_API_URL}${path}`;
