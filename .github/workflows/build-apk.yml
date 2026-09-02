@@ -1,0 +1,68 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [prod]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Setup EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Build APK on EAS
+        id: build
+        run: |
+          eas build --platform android --profile preview --non-interactive --wait --json > build-output.json
+          url=$(jq -r '.[0].artifacts.buildUrl' build-output.json)
+          if [ -z "$url" ] || [ "$url" = "null" ]; then
+            echo "EAS build did not return a downloadable artifact URL" >&2
+            cat build-output.json >&2
+            exit 1
+          fi
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+
+      - name: Download and tag APK with commit hash
+        id: artifact
+        run: |
+          short_sha=$(git rev-parse --short HEAD)
+          filename="tomady-${short_sha}.apk"
+          curl -L "${{ steps.build.outputs.url }}" -o "$filename"
+          echo "filename=$filename" >> "$GITHUB_OUTPUT"
+          echo "short_sha=$short_sha" >> "$GITHUB_OUTPUT"
+
+      - name: Write build summary header
+        run: |
+          {
+            echo "### 📦 Tomady APK — commit \`${{ steps.artifact.outputs.short_sha }}\`"
+            echo ""
+            echo "| Field | Value |"
+            echo "|---|---|"
+            echo "| Commit | \`${{ github.sha }}\` |"
+            echo "| Branch | \`${{ github.ref_name }}\` |"
+            echo "| File | \`${{ steps.artifact.outputs.filename }}\` |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.artifact.outputs.filename }}
+          path: ${{ steps.artifact.outputs.filename }}
+          retention-days: 30
