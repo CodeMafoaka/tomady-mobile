@@ -17,6 +17,7 @@ export function AssistantScreen({ openVoice, addMeal }) {
   const [streamingText, setStreamingText] = useState("");
   const [modelStatus, setModelStatus] = useState("loading");
   const [downloadProgress, setDownloadProgress] = useState(0);
+  const [downloadPromptDismissed, setDownloadPromptDismissed] = useState(false);
   const scrollRef = useRef(null);
   const streamCleanupRef = useRef(null);
 
@@ -64,6 +65,32 @@ export function AssistantScreen({ openVoice, addMeal }) {
     const text = (textOverride ?? input).trim();
     if (!text || loading) return;
 
+    // Demander le téléchargement du modèle réel avant la première utilisation
+    // de l'IA dans cette session, plutôt que de basculer silencieusement en
+    // mode démo.
+    if (modelStatus !== "ready" && !downloadPromptDismissed) {
+      Alert.alert(
+        "Modèle IA non téléchargé",
+        "L'assistant utilise actuellement des réponses de démonstration. Téléchargez le modèle Gemma réel pour des réponses personnalisées et hors-ligne.",
+        [
+          {
+            text: "Continuer en mode démo",
+            style: "cancel",
+            onPress: () => {
+              setDownloadPromptDismissed(true);
+              sendMessage(text);
+            },
+          },
+          { text: "Télécharger le modèle", onPress: handleDownloadModel },
+        ],
+      );
+      return;
+    }
+
+    await sendMessage(text);
+  };
+
+  const sendMessage = async (text) => {
     // Cancel any existing stream
     streamCleanupRef.current?.();
 
