@@ -1,12 +1,12 @@
 import { useState, useEffect, useRef } from "react";
-import { View, Text, Pressable, ScrollView, TextInput, ActivityIndicator } from "react-native";
+import { View, Text, Pressable, ScrollView, TextInput, ActivityIndicator, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { Sparkles, Send, Mic, Check } from "lucide-react-native";
 import { C, FONTS } from "../constant/theme";
 import { SUGGESTIONS } from "../data/mockData";
 import { AIStatusBadge } from "../components/AIStatusBadge";
-import { getModelStatus, startStreamingSession, analyzeMeal } from "../services/tomadyBridge";
+import { getModelStatus, downloadModel, startStreamingSession, analyzeMeal } from "../services/tomadyBridge";
 import { getChatMessages, addChatMessage } from "../services/database";
 
 export function AssistantScreen({ openVoice, addMeal }) {
@@ -16,22 +16,49 @@ export function AssistantScreen({ openVoice, addMeal }) {
   const [savedCards, setSavedCards] = useState({});
   const [streamingText, setStreamingText] = useState("");
   const [modelStatus, setModelStatus] = useState("loading");
+  const [downloadProgress, setDownloadProgress] = useState(0);
   const scrollRef = useRef(null);
   const streamCleanupRef = useRef(null);
+
+  const refreshModelStatus = async () => {
+    const status = await getModelStatus();
+    setModelStatus(status.loaded ? (status.usingMock ? "mock" : "ready") : "unavailable");
+  };
 
   // Charger l'historique et le statut du modèle au montage
   useEffect(() => {
     (async () => {
       const saved = await getChatMessages();
       if (saved.length > 0) setMessages(saved);
-      const status = await getModelStatus();
-      setModelStatus(status.loaded ? "ready" : status.usingMock ? "ready" : "unavailable");
+      await refreshModelStatus();
     })();
     // Cleanup streaming on unmount
     return () => {
       streamCleanupRef.current?.();
     };
   }, []);
+
+  // Déclenche le téléchargement du vrai modèle Gemma (mode démo → modèle réel).
+  const handleDownloadModel = async () => {
+    setModelStatus("downloading");
+    setDownloadProgress(0);
+    try {
+      const result = await downloadModel((progress) => setDownloadProgress(progress));
+      if (result) {
+        await refreshModelStatus();
+        Alert.alert("Modèle téléchargé", "Le modèle Gemma réel est prêt à être utilisé.");
+      } else {
+        Alert.alert(
+          "Échec du téléchargement",
+          "Impossible de télécharger le modèle. Vérifiez que le service Tomady est bien démarré et réessayez.",
+        );
+        await refreshModelStatus();
+      }
+    } catch (e) {
+      Alert.alert("Échec du téléchargement", e?.message || "Une erreur est survenue.");
+      await refreshModelStatus();
+    }
+  };
 
   const send = async (textOverride) => {
     const text = (textOverride ?? input).trim();
@@ -133,7 +160,11 @@ export function AssistantScreen({ openVoice, addMeal }) {
           </Text>
           <Text className="text-[11.5px]" style={{ color: C.muted }}>Votre intelligence nutritionnelle personnelle</Text>
         </View>
-        <AIStatusBadge status={modelStatus} />
+        <AIStatusBadge
+          status={modelStatus}
+          progress={downloadProgress}
+          onPress={modelStatus === "mock" || modelStatus === "unavailable" ? handleDownloadModel : undefined}
+        />
       </View>
 
       <View className="flex-1">
