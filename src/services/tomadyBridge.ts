@@ -87,8 +87,8 @@ export async function getProfile(): Promise<typeof USER> {
 
   // Try REST API
   try {
-    const profile = await apiFetch("/api/v1/diet/profile/user-1");
-    if (profile) return mapProfileFromNative(profile);
+    const result = await apiFetch("/api/v1/diet/profile/user-1");
+    if (result?.profile) return mapProfileFromNative(result.profile);
   } catch {
     // Fall through to SQLite
   }
@@ -150,11 +150,38 @@ export async function saveProfile(data: Partial<typeof USER>): Promise<void> {
   try {
     await apiFetch("/api/v1/diet/profile", {
       method: "PUT",
-      body: JSON.stringify(data),
+      body: JSON.stringify(mapProfileToRestPayload("user-1", data)),
     });
   } catch (e) {
     console.warn("Failed to sync profile to REST API:", e);
   }
+}
+
+/**
+ * Maps a partial `USER`-shaped profile update to the Profile fields the
+ * backend's `PUT /api/v1/diet/profile` expects (see Profile.kt). Array
+ * fields are stored as JSON strings server-side, matching how the native
+ * bridge (DietModule) already encodes them.
+ */
+function mapProfileToRestPayload(userId: string, data: Partial<typeof USER>): Record<string, unknown> {
+  return {
+    userId,
+    displayName: data.firstName ?? data.name,
+    heightCm: data.height,
+    weightKg: data.weight?.current,
+    dailyCalorieTarget: data.calorieGoal,
+    proteinGramsTarget: data.protein?.goal,
+    carbsGramsTarget: data.carbs?.goal,
+    fatGramsTarget: data.fat?.goal,
+    goal: data.goal,
+    age: data.age,
+    activityLevel: data.activityLevel,
+    allergies: data.allergies ? JSON.stringify(data.allergies) : undefined,
+    intolerances: data.intolerances ? JSON.stringify(data.intolerances) : undefined,
+    conditions: data.conditions ? JSON.stringify(data.conditions) : undefined,
+    restrictedFoods: data.restrictedFoods ? JSON.stringify(data.restrictedFoods) : undefined,
+    forbiddenByDoctor: data.forbiddenByDoctor ? JSON.stringify(data.forbiddenByDoctor) : undefined,
+  };
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -309,16 +336,32 @@ export async function logMeal(meal: {
     }
   }
 
-  // Try REST API
+  // Try REST API — create a Dish carrying the macros first (DishHistory itself
+  // has no kcal/macro columns; computeDishNutrition() falls back to the Dish's
+  // own calories/proteinGrams/carbsGrams/fatGrams when it has no linked recipe).
   try {
+    const mealType = ["Petit-déjeuner", "Déjeuner", "Collation", "Dîner"][meal.meal_order ?? 0] ?? "Repas";
+    const dishResult = await apiFetch("/api/v1/diet/dish", {
+      method: "POST",
+      body: JSON.stringify({
+        name: meal.name,
+        category: mealType,
+        calories: meal.kcal ?? null,
+        proteinGrams: meal.protein_g ?? null,
+        carbsGrams: meal.carbs_g ?? null,
+        fatGrams: meal.fat_g ?? null,
+      }),
+    });
+    const dishId = dishResult?.dish?.id ?? null;
+
     await apiFetch("/api/v1/diet/meal", {
       method: "POST",
       body: JSON.stringify({
         userId: "user-1",
-        dishId: null,
+        dishId,
         date: meal.date ?? new Date().toISOString().split("T")[0],
-        mealType: ["Petit-déjeuner", "Déjeuner", "Collation", "Dîner"][meal.meal_order ?? 0] ?? "Repas",
-        servings: null,
+        mealType,
+        servings: 1,
         notes: meal.name,
       }),
     });
@@ -359,22 +402,44 @@ export async function getMealsForDate(dateStr: string): Promise<any[]> {
   // Try REST API
   try {
     const result = await apiFetch(`/api/v1/diet/meals/user-1?date=${dateStr}`);
-    const items = result.meals ?? result ?? [];
+    const items = result?.meals ?? [];
     if (Array.isArray(items) && items.length > 0) {
-      return items.map((h: any) => ({
-        id: h.id ?? h.historyId ?? Math.random(),
-        name: h.dishName ?? h.name ?? h.notes ?? "Repas",
-        kcal: h.kcal ?? h.calories ?? 0,
-        protein_g: h.proteinG ?? h.protein ?? 0,
-        carbs_g: h.carbsG ?? h.carbs ?? 0,
-        fat_g: h.fatG ?? h.fat ?? 0,
-        status: h.status ?? "eaten",
-        meal_type: h.mealType ?? "Repas",
-        feeling: h.feeling ?? null,
-        date: h.date ?? dateStr,
-        time: h.time ?? null,
-        meal_order: h.mealOrder ?? 0,
-      }));
+      // DishHistory itself carries no kcal/macro columns — fetch the linked
+      // Dish's computed nutrition (falls back to the Dish's own stored
+      // macros when it has no recipe, see computeDishNutrition()).
+      const nutritionByDishId = new Map<string, any>();
+      await Promise.all(
+        items
+          .map((h: any) => h.dishId)
+          .filter((id: string | null | undefined): id is string => !!id)
+          .filter((id: string, i: number, arr: string[]) => arr.indexOf(id) === i)
+          .map(async (dishId: string) => {
+            try {
+              const res = await apiFetch(`/api/v1/diet/nutrition/${dishId}`);
+              if (res?.nutrition) nutritionByDishId.set(dishId, res.nutrition);
+            } catch {
+              // Leave missing — falls back to 0 below
+            }
+          }),
+      );
+
+      return items.map((h: any) => {
+        const nutrition = h.dishId ? nutritionByDishId.get(h.dishId) : null;
+        return {
+          id: h.id ?? Math.random(),
+          name: h.notes ?? "Repas",
+          kcal: nutrition?.totalCalories ?? 0,
+          protein_g: nutrition?.totalProteinG ?? 0,
+          carbs_g: nutrition?.totalCarbsG ?? 0,
+          fat_g: nutrition?.totalFatG ?? 0,
+          status: "good",
+          meal_type: h.mealType ?? "Repas",
+          feeling: null,
+          date: h.date ?? dateStr,
+          time: null,
+          meal_order: 0,
+        };
+      });
     }
   } catch {
     // Fall through
@@ -418,13 +483,14 @@ export async function getDailySummary(
 
   // Try REST API
   try {
-    const summary = await apiFetch(`/api/v1/diet/summary/user-1?date=${date}`);
+    const result = await apiFetch(`/api/v1/diet/summary/user-1?date=${date}`);
+    const summary = result?.summary;
     if (summary) {
       return {
-        calories: summary.totalCalories ?? summary.calories ?? 0,
-        protein: { consumed: summary.totalProteinG ?? summary.protein ?? 0, goal: 120 },
-        carbs: { consumed: summary.totalCarbsG ?? summary.carbs ?? 0, goal: 220 },
-        fat: { consumed: summary.totalFatG ?? summary.fat ?? 0, goal: 65 },
+        calories: summary.totalCalories ?? 0,
+        protein: { consumed: summary.totalProteinG ?? 0, goal: 120 },
+        carbs: { consumed: summary.totalCarbsG ?? 0, goal: 220 },
+        fat: { consumed: summary.totalFatG ?? 0, goal: 65 },
       };
     }
   } catch {
@@ -529,20 +595,33 @@ export async function recordBio(bio: {
   diastolicBp?: number;
   notes?: string;
 }): Promise<void> {
+  const date = bio.date ?? new Date().toISOString().split("T")[0];
+
   if (hasNativeBridge) {
     try {
       await getDiet().recordBio(
         "user-1",
-        bio.date ?? new Date().toISOString().split("T")[0],
+        date,
         bio.weightKg ?? null,
         bio.bodyFatPercentage ?? null,
         bio.systolicBp ?? null,
         bio.diastolicBp ?? null,
         bio.notes ?? null,
       );
+      return;
     } catch (e) {
       console.warn("Failed to record bio to native backend:", e);
     }
+  }
+
+  // Try REST API
+  try {
+    await apiFetch("/api/v1/diet/bio", {
+      method: "POST",
+      body: JSON.stringify({ userId: "user-1", date, ...bio }),
+    });
+  } catch (e) {
+    console.warn("Failed to record bio to REST API:", e);
   }
 }
 
@@ -687,11 +766,11 @@ export async function getModelStatus(): Promise<{
 
   // Try REST API
   try {
-    const result = await apiFetch("/api/v1/gemma/model");
+    const result = await apiFetch("/api/v1/gemma/download/status");
     return {
       loaded: result.loaded ?? false,
       usingMock: result.usingMock ?? true,
-      version: result.version ?? null,
+      version: result.modelVersion ?? null,
     };
   } catch {
     // Fall through to mock
@@ -924,7 +1003,7 @@ function getDefaultInsight(meals: {
 }
 
 /**
- * Télécharge le modèle Gemma (~2 GB) avec suivi de progression.
+ * Télécharge le modèle Gemma avec suivi de progression.
  */
 export async function downloadModel(
   onProgress?: (progress: number) => void,
@@ -957,8 +1036,34 @@ export async function downloadModel(
     }
   }
 
-  console.warn("Native bridge not available — cannot download model");
-  return null;
+  // REST fallback — POST /api/v1/gemma/download starts the download+load in
+  // the background on the Android service; poll /download/status for progress.
+  try {
+    await apiFetch("/api/v1/gemma/download", { method: "POST" });
+
+    return await new Promise<string | null>((resolve) => {
+      const poll = setInterval(async () => {
+        try {
+          const status = await apiFetch("/api/v1/gemma/download/status");
+          if (status.progress != null) onProgress?.(status.progress);
+          if (status.loaded && !status.usingMock) {
+            clearInterval(poll);
+            resolve(status.modelVersion ?? "downloaded");
+          } else if (!status.downloading && !status.cached) {
+            // Download finished but failed (not cached, not in progress anymore)
+            clearInterval(poll);
+            resolve(null);
+          }
+        } catch {
+          clearInterval(poll);
+          resolve(null);
+        }
+      }, 1500);
+    });
+  } catch (e: any) {
+    console.warn("Model download via REST failed:", e?.message);
+    return null;
+  }
 }
 
 /**
@@ -969,28 +1074,43 @@ export async function downloadModel(
 export async function ensureModelReady(
   onProgress?: (progress: number) => void,
 ): Promise<boolean> {
-  if (!hasNativeBridge) return false;
+  if (hasNativeBridge) {
+    try {
+      const status = await getGemma().getModelStatus();
+      if (status.loaded && !status.usingMock) {
+        return true; // Already loaded with real model
+      }
 
+      // Model not loaded or using mock -> trigger download
+      console.log("Gemma model not ready (usingMock:", status.usingMock, "), starting download...");
+      const downloadedPath = await downloadModel(onProgress);
+
+      if (downloadedPath) {
+        // Download succeeded, now load the model
+        await getGemma().loadModel(downloadedPath);
+        const finalStatus = await getGemma().getModelStatus();
+        return finalStatus.loaded && !finalStatus.usingMock;
+      }
+
+      return false;
+    } catch (e) {
+      console.warn("ensureModelReady failed:", e);
+      return false;
+    }
+  }
+
+  // REST fallback
   try {
-    const status = await getGemma().getModelStatus();
-    if (status.loaded && !status.usingMock) {
-      return true; // Already loaded with real model
-    }
+    const status = await getModelStatus();
+    if (status.loaded && !status.usingMock) return true;
 
-    // Model not loaded or using mock -> trigger download
-    console.log("Gemma model not ready (usingMock:", status.usingMock, "), starting download...");
-    const downloadedPath = await downloadModel(onProgress);
-    
-    if (downloadedPath) {
-      // Download succeeded, now load the model
-      await getGemma().loadModel(downloadedPath);
-      const finalStatus = await getGemma().getModelStatus();
-      return finalStatus.loaded && !finalStatus.usingMock;
-    }
-    
-    return false;
+    console.log("Gemma model not ready (usingMock:", status.usingMock, "), starting REST download...");
+    const result = await downloadModel(onProgress);
+    if (!result) return false;
+    const finalStatus = await getModelStatus();
+    return finalStatus.loaded && !finalStatus.usingMock;
   } catch (e) {
-    console.warn("ensureModelReady failed:", e);
+    console.warn("ensureModelReady (REST) failed:", e);
     return false;
   }
 }
@@ -1061,23 +1181,6 @@ export function startStreamingSession(
     });
 
     return () => { cancelled = true; cleanupFn?.(); };
-    const tokens = mockResponse.split(" ");
-    let idx = 0;
-    let fullText = "";
-
-    const interval = setInterval(() => {
-      if (idx < tokens.length) {
-        const token = (idx < tokens.length - 1 ? tokens[idx] + " " : tokens[idx]);
-        fullText += token;
-        onToken(token);
-        idx++;
-      } else {
-        clearInterval(interval);
-        onComplete(fullText);
-      }
-    }, 80);
-
-    return () => clearInterval(interval);
   }
 
   // Native streaming via GemmaModule

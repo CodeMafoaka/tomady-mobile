@@ -26,7 +26,7 @@ import { BottomNav } from "../components/BottomNav";
 import { Toast } from "../components/Toast";
 import { C } from "../constant/theme";
 import { FOODS } from "../data/mockData";
-import { getProfile, getMealsForDate, saveProfile } from "../services/tomadyBridge";
+import { getProfile, getMealsForDate, saveProfile, logMeal } from "../services/tomadyBridge";
 import { AlertsScreen } from "../screens/AlertsScreen";
 import { AssistantScreen } from "../screens/AssistantScreen";
 import { CatalogueScreen } from "../screens/CatalogueScreen";
@@ -42,7 +42,7 @@ import { ProfileScreen } from "../screens/ProfileScreen";
 import { StatsScreen } from "../screens/StatsScreen";
 import { VoiceModal } from "../screens/VoiceModal";
 import { WelcomeScreen } from "../screens/WelcomeScreen";
-import { getUser, initDatabase, saveUser, getTodayMeals, addMealEntry } from "../services/database";
+import { getUser, initDatabase, saveUser, getTodayMeals } from "../services/database";
 
 const MAIN_TABS = new Set(["dashboard", "journal", "catalogue", "assistant", "profile"]);
 
@@ -183,11 +183,16 @@ export default function App() {
       ? Math.min(3, Math.max(...existingOrders) + 1)
       : 0;
 
-    await addMealEntry({
+    const fullMeal = {
       ...partialMeal,
       time,
       meal_order: mealOrder,
-    });
+    };
+
+    // logMeal() saves to SQLite (step 1) then best-effort syncs to the
+    // native bridge / REST API (step 2+3) — do not also call addMealEntry
+    // directly here, or the meal would be inserted into SQLite twice.
+    await logMeal(fullMeal);
 
     // Recharge les repas du jour depuis SQLite
     const todayMeals = await getTodayMeals();
