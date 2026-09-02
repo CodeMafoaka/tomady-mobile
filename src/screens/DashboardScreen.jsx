@@ -117,7 +117,11 @@ export function DashboardScreen({ go, profile: propProfile, meals: propMeals }) 
     })();
   }, []);
 
-  const p = propProfile || localProfile;
+  // localProfile starts as propProfile (or USER) and is upgraded in the effect
+  // above with the backend's own computed daily summary — it must win over
+  // the raw prop, which is always a truthy object even before that fetch
+  // resolves, or the backend-computed totals silently never get used.
+  const p = localProfile;
   const pct = Math.min(1, (p.caloriesConsumed || 0) / Math.max(1, p.calorieGoal || 2000));
   const remaining = Math.max(0, (p.calorieGoal || 2000) - (p.caloriesConsumed || 0));
 

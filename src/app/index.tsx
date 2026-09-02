@@ -26,7 +26,7 @@ import { BottomNav } from "../components/BottomNav";
 import { Toast } from "../components/Toast";
 import { C } from "../constant/theme";
 import { FOODS } from "../data/mockData";
-import { getProfile, getMealsForDate, saveProfile, logMeal } from "../services/tomadyBridge";
+import { getProfile, getMealsForDate, saveProfile, logMeal, getDailySummary } from "../services/tomadyBridge";
 import { AlertsScreen } from "../screens/AlertsScreen";
 import { AssistantScreen } from "../screens/AssistantScreen";
 import { CatalogueScreen } from "../screens/CatalogueScreen";
@@ -65,23 +65,20 @@ export default function App() {
   const [profile, setProfile] = useState({});
   const [dbReady, setDbReady] = useState(false);
 
-  // Recalcule les totaux du jour dans profile à partir des repas
-  const applyDailyTotals = (todayMeals) => {
+  // Recalcule les totaux du jour dans profile.
+  // Délègue le calcul à getDailySummary() (backend REST en priorité, avec son
+  // propre repli sur un calcul SQLite local) plutôt que de resommer les repas
+  // ici — tout le calcul nutritionnel doit rester géré par le backend Tomady.
+  const applyDailyTotals = async () => {
+    const today = new Date().toISOString().split("T")[0];
+    const summary = await getDailySummary(today);
+    if (!summary) return;
     setProfile((prev) => ({
       ...prev,
-      caloriesConsumed: todayMeals.reduce((sum, m) => sum + (m.kcal || 0), 0),
-      protein: {
-        ...prev.protein,
-        consumed: todayMeals.reduce((sum, m) => sum + (m.protein_g || 0), 0),
-      },
-      carbs: {
-        ...prev.carbs,
-        consumed: todayMeals.reduce((sum, m) => sum + (m.carbs_g || 0), 0),
-      },
-      fat: {
-        ...prev.fat,
-        consumed: todayMeals.reduce((sum, m) => sum + (m.fat_g || 0), 0),
-      },
+      caloriesConsumed: summary.calories,
+      protein: { ...prev.protein, consumed: summary.protein.consumed },
+      carbs: { ...prev.carbs, consumed: summary.carbs.consumed },
+      fat: { ...prev.fat, consumed: summary.fat.consumed },
     }));
   };
 
@@ -102,7 +99,7 @@ export default function App() {
           const bridgeMeals = await getMealsForDate(today);
           if (bridgeMeals.length > 0) {
             setMeals(bridgeMeals);
-            applyDailyTotals(bridgeMeals);
+            await applyDailyTotals();
           }
 
           setDbReady(true);
@@ -120,7 +117,7 @@ export default function App() {
         const todayMeals = await getTodayMeals();
         if (todayMeals.length > 0) {
           setMeals(todayMeals);
-          applyDailyTotals(todayMeals);
+          await applyDailyTotals();
         }
       }
 
@@ -197,7 +194,7 @@ export default function App() {
     // Recharge les repas du jour depuis SQLite
     const todayMeals = await getTodayMeals();
     setMeals(todayMeals);
-    applyDailyTotals(todayMeals);
+    await applyDailyTotals();
 
     showToast("Repas ajouté au journal \u2713");
   };
@@ -230,7 +227,7 @@ export default function App() {
           onMealDeleted={async () => {
             const todayMeals = await getTodayMeals();
             setMeals(todayMeals);
-            applyDailyTotals(todayMeals);
+            await applyDailyTotals();
             showToast("Repas supprimé");
           }}
         />
